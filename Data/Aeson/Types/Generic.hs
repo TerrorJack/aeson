@@ -5,6 +5,7 @@
 {-# LANGUAGE KindSignatures #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE NoImplicitPrelude #-}
+{-# LANGUAGE PolyKinds #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TypeOperators #-}
 {-# LANGUAGE UndecidableInstances #-}
@@ -25,6 +26,7 @@ module Data.Aeson.Types.Generic
     (
       IsRecord
     , AllNullary
+    , Tagged(..)
     , Tagged2(..)
     , True
     , False
@@ -66,6 +68,8 @@ instance AllNullary (K1 i c) False
 instance AllNullary Par1 False
 instance AllNullary (Rec1 f) False
 instance AllNullary U1 True
+
+newtype Tagged s b = Tagged {unTagged :: b}
 
 newtype Tagged2 (s :: * -> *) b = Tagged2 {unTagged2 :: b}
 

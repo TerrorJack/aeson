@@ -31,7 +31,6 @@ import Data.List (sort)
 import Data.Maybe (fromMaybe)
 import Data.Sequence (Seq)
 import Data.Scientific (Scientific, scientific)
-import Data.Tagged (Tagged(..))
 import Data.Text (Text)
 import Data.Time (UTCTime)
 import Data.Time.Format (parseTime, defaultTimeLocale)
@@ -316,7 +315,6 @@ instance FromJSONKey MyText' where
 fromJSONKeyAssertions :: [Assertion]
 fromJSONKeyAssertions =
     [ assertIsCoerce  "Text"            (fromJSONKey :: FromJSONKeyFunction Text)
-    , assertIsCoerce  "Tagged Int Text" (fromJSONKey :: FromJSONKeyFunction (Tagged Int Text))
     , assertIsCoerce  "MyText"          (fromJSONKey :: FromJSONKeyFunction MyText)
     , assertIsCoerce' "MyText'"         (fromJSONKey :: FromJSONKeyFunction MyText')
     ]

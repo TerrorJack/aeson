@@ -27,7 +27,6 @@ import Data.Functor.Sum (Sum(..))
 import Data.List.NonEmpty (NonEmpty(..))
 import Data.Proxy (Proxy(..))
 import Data.Scientific (Scientific)
-import Data.Tagged (Tagged(..))
 import Data.Time (fromGregorian)
 import Data.Word (Word8)
 import GHC.Generics (Generic)
@@ -63,8 +62,6 @@ jsonExamples =
   , example "Nothing"  "null"  (Nothing :: Maybe Int)
   , example "Just"  "1"  (Just 1 :: Maybe Int)
   , example "Proxy Int" "null"  (Proxy :: Proxy Int)
-  , example "Tagged Char Int" "1"  (Tagged 1 :: Tagged Char Int)
-  , example "Tagged 123 Int" "1"  (Tagged 1 :: Tagged 123 Int)
   , example "Const Char Int" "\"c\""  (Const 'c' :: Const Char Int)
   , example "Tuple" "[1,2]"  ((1, 2) :: (Int, Int))
   , example "NonEmpty" "[1,2,3]"  (1 :| [2, 3] :: NonEmpty Int)
@@ -78,9 +75,6 @@ jsonExamples =
   , Example "Map Int Int"
         [ "{\"0\":1,\"2\":3}", "{\"2\":3,\"0\":1}"]
         (M.fromList [(0,1),(2,3)] :: M.Map Int Int)
-  , Example "Map (Tagged Int Int) Int"
-        [ "{\"0\":1,\"2\":3}", "{\"2\":3,\"0\":1}"]
-        (M.fromList [(Tagged 0,1),(Tagged 2,3)] :: M.Map (Tagged Int Int) Int)
   , example "Map [Int] Int"
         "[[[0],1],[[2],3]]"
         (M.fromList [([0],1),([2],3)] :: M.Map [Int] Int)

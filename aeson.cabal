@@ -84,11 +84,6 @@ library
   build-depends:
     base-compat     >= 0.9.1    && < 0.11
 
-  -- cannot use latest version
-  build-depends:
-    -- not in LTS-12.10
-    tagged               >= 0.8.5    && < 0.9
-
   -- Other dependencies
   build-depends:
     attoparsec           >= 0.13.2.2 && < 0.14,
@@ -134,7 +129,6 @@ test-suite tests
     filepath,
     ghc-prim >= 0.2,
     scientific,
-    tagged,
     tasty,
     tasty-hunit,
     tasty-quickcheck,
