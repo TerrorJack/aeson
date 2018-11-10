@@ -50,10 +50,6 @@ library
     Data.Aeson.Internal.Time
     Data.Aeson.Parser.Internal
 
-  -- Deprecated modules
-  exposed-modules:
-    Data.Aeson.Encode
-
   other-modules:
     Data.Aeson.Compat
     Data.Aeson.Encoding.Builder
