@@ -106,10 +106,6 @@ import qualified Data.Text as T
 import qualified Data.Text.Encoding as T
 import qualified Data.Text.Lazy as LT
 import qualified Data.Tree as Tree
-import qualified Data.UUID.Types as UUID
-
-import qualified Data.Aeson.Encoding.Builder as EB
-import qualified Data.ByteString.Builder as B
 
 import qualified GHC.Exts as Exts
 import qualified Data.Primitive.Array as PM
@@ -1772,18 +1768,6 @@ instance (ToJSON v) => ToJSON (Tree.Tree v) where
 
     toEncoding = toEncoding1
     {-# INLINE toEncoding #-}
-
--------------------------------------------------------------------------------
--- uuid
--------------------------------------------------------------------------------
-
-instance ToJSON UUID.UUID where
-    toJSON = toJSON . UUID.toText
-    toEncoding = E.unsafeToEncoding . EB.quote . B.byteString . UUID.toASCIIBytes
-
-instance ToJSONKey UUID.UUID where
-    toJSONKey = ToJSONKeyText UUID.toText $
-        E.unsafeToEncoding . EB.quote . B.byteString . UUID.toASCIIBytes
 
 -------------------------------------------------------------------------------
 -- aeson

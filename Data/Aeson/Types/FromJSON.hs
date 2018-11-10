@@ -120,7 +120,6 @@ import qualified Data.Text as T
 import qualified Data.Text.Encoding as T
 import qualified Data.Text.Lazy as LT
 import qualified Data.Tree as Tree
-import qualified Data.UUID.Types as UUID
 
 import qualified GHC.Exts as Exts
 import qualified Data.Primitive.Array as PM
@@ -1554,18 +1553,6 @@ instance FromJSON1 Tree.Tree where
 instance (FromJSON v) => FromJSON (Tree.Tree v) where
     parseJSON = parseJSON1
     {-# INLINE parseJSON #-}
-
--------------------------------------------------------------------------------
--- uuid
--------------------------------------------------------------------------------
-
-instance FromJSON UUID.UUID where
-    parseJSON = withText "UUID" $
-        maybe (fail "Invalid UUID") pure . UUID.fromText
-
-instance FromJSONKey UUID.UUID where
-    fromJSONKey = FromJSONKeyTextParser $
-        maybe (fail "Invalid UUID") pure . UUID.fromText
 
 -------------------------------------------------------------------------------
 -- aeson

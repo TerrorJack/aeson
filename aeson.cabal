@@ -95,8 +95,7 @@ library
     attoparsec           >= 0.13.2.2 && < 0.14,
     dlist                >= 0.8.0.4  && < 0.9,
     scientific           >= 0.3.6.2  && < 0.4,
-    time-locale-compat   >= 0.1.1.5  && < 0.2,
-    uuid-types           >= 1.0.3    && < 1.1
+    time-locale-compat   >= 0.1.1.5  && < 0.2
 
   ghc-options: -Wall
 
@@ -144,7 +143,6 @@ test-suite tests
     text,
     time,
     time-locale-compat,
-    uuid-types,
     quickcheck-instances >= 0.3.16
 
 source-repository head

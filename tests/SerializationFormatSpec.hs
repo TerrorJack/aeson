@@ -45,7 +45,6 @@ import qualified Data.Semigroup as Semigroup
 import qualified Data.Sequence as Seq
 import qualified Data.Set as Set
 import qualified Data.Tree as Tree
-import qualified Data.UUID.Types as UUID
 
 tests :: [TestTree]
 tests =
@@ -101,9 +100,6 @@ jsonExamples =
   , example "Float" "3.14" (3.14 :: Float)
   , example "Pico" "3.14" (3.14 :: Pico)
   , example "Scientific" "3.14" (3.14 :: Scientific)
-
-  , example "UUID" "\"c2cc10e1-57d6-4b6f-9899-38d972112d8c\"" $ UUID.fromWords
-      0xc2cc10e1 0x57d64b6f 0x989938d9 0x72112d8c
 
   , example "Set Int" "[1,2,3]" (Set.fromList [3, 2, 1] :: Set.Set Int)
   , example "IntSet"  "[1,2,3]" (IntSet.fromList [3, 2, 1])
