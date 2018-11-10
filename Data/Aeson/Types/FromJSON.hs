@@ -139,7 +139,7 @@ parseJSONElemAtIndex :: (Value -> Parser a) -> Int -> [Value] -> Parser a
 parseJSONElemAtIndex p idx ary = p (ary !! idx) <?> Index idx
 
 parseRealFloat :: RealFloat a => String -> Value -> Parser a
-parseRealFloat _        (Number s) = pure $ Scientific.toRealFloat $ Scientific.fromFloatDigits s
+parseRealFloat _        (Number s) = pure $ realToFrac s
 parseRealFloat _        Null       = pure (0/0)
 parseRealFloat expected v          = typeMismatch expected v
 {-# INLINE parseRealFloat #-}
