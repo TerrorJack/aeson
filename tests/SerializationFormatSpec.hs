@@ -46,7 +46,6 @@ import qualified Data.Sequence as Seq
 import qualified Data.Set as Set
 import qualified Data.Tree as Tree
 import qualified Data.UUID.Types as UUID
-import qualified Data.Vector as Vector
 
 tests :: [TestTree]
 tests =
@@ -109,7 +108,7 @@ jsonExamples =
   , example "Set Int" "[1,2,3]" (Set.fromList [3, 2, 1] :: Set.Set Int)
   , example "IntSet"  "[1,2,3]" (IntSet.fromList [3, 2, 1])
   , example "IntMap" "[[1,2],[3,4]]" (IntMap.fromList [(3,4), (1,2)] :: IntMap.IntMap Int)
-  , example "Vector" "[1,2,3]" (Vector.fromList [1, 2, 3] :: Vector.Vector Int)
+  , example "List" "[1,2,3]" ([1, 2, 3] :: [Int])
   , example "Set Int" "[1,2,3]" (Set.fromList [3, 2, 1] :: Set.Set Int)
   , example "Tree Int" "[1,[[2,[[3,[]],[4,[]]]],[5,[]]]]" (let n = Tree.Node in n 1 [n 2 [n 3 [], n 4 []], n 5 []] :: Tree.Tree Int)
 

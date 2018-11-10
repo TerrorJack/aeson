@@ -55,7 +55,6 @@ module Data.Aeson.Types.ToJSON
 import Prelude.Compat
 
 import Control.Applicative (Const(..))
-import Control.Monad.ST (ST)
 import Data.Aeson.Encoding (Encoding, Encoding', Series, dict, emptyArray_)
 import Data.Aeson.Encoding.Internal ((>*<))
 import Data.Aeson.Internal.Functions (mapKeyVal)
@@ -83,11 +82,9 @@ import Data.Text (Text, pack)
 import Data.Time (Day, DiffTime, LocalTime, NominalDiffTime, TimeOfDay, UTCTime, ZonedTime)
 import Data.Time.Format (FormatTime, formatTime)
 import Data.Time.Locale.Compat (defaultTimeLocale)
-import Data.Vector (Vector)
 import Data.Version (Version, showVersion)
 import Data.Void (Void, absurd)
 import Data.Word (Word16, Word32, Word64, Word8)
-import Foreign.Storable (Storable)
 import Foreign.C.Types (CTime (..))
 import GHC.Generics
 import Numeric.Natural (Natural)
@@ -110,12 +107,6 @@ import qualified Data.Text.Encoding as T
 import qualified Data.Text.Lazy as LT
 import qualified Data.Tree as Tree
 import qualified Data.UUID.Types as UUID
-import qualified Data.Vector as V
-import qualified Data.Vector.Generic as VG
-import qualified Data.Vector.Mutable as VM
-import qualified Data.Vector.Primitive as VP
-import qualified Data.Vector.Storable as VS
-import qualified Data.Vector.Unboxed as VU
 
 import qualified Data.Aeson.Encoding.Builder as EB
 import qualified Data.ByteString.Builder as B
@@ -624,7 +615,7 @@ listEncoding = E.list
 
 -- | Helper function to use with 'liftToJSON', see 'listEncoding'.
 listValue :: (a -> Value) -> [a] -> Value
-listValue f = Array . V.fromList . map f
+listValue f = Array . map f
 {-# INLINE listValue #-}
 
 -------------------------------------------------------------------------------
@@ -730,14 +721,8 @@ instance ( WriteProduct arity a, WriteProduct arity b
          , ProductSize        a, ProductSize        b
          ) => GToJSON Value arity (a :*: b)
   where
-    -- Products are encoded to an array. Here we allocate a mutable vector of
-    -- the same size as the product and write the product's elements to it using
-    -- 'writeProduct':
     gToJSON opts targs p =
-        Array $ V.create $ do
-          mv <- VM.unsafeNew lenProduct
-          writeProduct opts targs mv 0 lenProduct p
-          return mv
+        Array $ writeProduct opts targs (replicate lenProduct (error "unreachable")) 0 lenProduct p
         where
           lenProduct = (unTagged2 :: Tagged2 (a :*: b) Int -> Int)
                        productSize
@@ -778,9 +763,6 @@ instance ( EncodeProduct  arity a
          , EncodeProduct  arity b
          ) => GToJSON Encoding arity (a :*: b)
   where
-    -- Products are encoded to an array. Here we allocate a mutable vector of
-    -- the same size as the product and write the product's elements to it using
-    -- 'encodeProduct':
     gToJSON opts targs p = E.list E.retagEncoding [encodeProduct opts targs p]
     {-# INLINE gToJSON #-}
 
@@ -952,12 +934,7 @@ instance ( GToJSON    Value arity a
          , ConsToJSON Value arity a
          , Constructor c
          ) => SumToJSON' TwoElemArray Value arity (C1 c a) where
-    sumToJSON' opts targs x = Tagged $ Array $ V.create $ do
-      mv <- VM.unsafeNew 2
-      VM.unsafeWrite mv 0 $ String $ pack $ constructorTagModifier opts
-                                   $ conName (undefined :: t c a p)
-      VM.unsafeWrite mv 1 $ gToJSON opts targs x
-      return mv
+    sumToJSON' opts targs x = Tagged $ Array [String $ pack $ constructorTagModifier opts $ conName (undefined :: t c a p), gToJSON opts targs x]
 
 --------------------------------------------------------------------------------
 
@@ -1082,27 +1059,32 @@ fieldToPair opts targs m1 =
 class WriteProduct arity f where
     writeProduct :: Options
                  -> ToArgs Value arity a
-                 -> VM.MVector s Value
+                 -> [Value]
                  -> Int -- ^ index
                  -> Int -- ^ length
                  -> f a
-                 -> ST s ()
+                 -> [Value]
 
 instance ( WriteProduct arity a
          , WriteProduct arity b
          ) => WriteProduct arity (a :*: b) where
-    writeProduct opts targs mv ix len (a :*: b) = do
-      writeProduct opts targs mv ix  lenL a
-      writeProduct opts targs mv ixR lenR b
+    writeProduct opts targs mv ix len (a :*: b) = writeProduct opts targs (writeProduct opts targs mv ix lenL a) ixR lenR b
         where
           lenL = len `unsafeShiftR` 1
           lenR = len - lenL
           ixR  = ix  + lenL
     {-# INLINE writeProduct #-}
 
+unsafeListWrite :: [a] -> Int -> a -> [a]
+unsafeListWrite xs i a =
+  case splitAt i xs of
+    (l, _:r) -> l <> (a : r)
+    _ -> error "unreachable"
+{-# INLINE unsafeListWrite #-}
+
 instance {-# OVERLAPPABLE #-} (GToJSON Value arity a) => WriteProduct arity a where
     writeProduct opts targs mv ix _ =
-      VM.unsafeWrite mv ix . gToJSON opts targs
+      unsafeListWrite mv ix . gToJSON opts targs
     {-# INLINE writeProduct #-}
 
 --------------------------------------------------------------------------------
@@ -1746,7 +1728,7 @@ instance ToJSON a => ToJSON (IntMap.IntMap a) where
 instance ToJSONKey k => ToJSON1 (M.Map k) where
     liftToJSON g _ = case toJSONKey of
         ToJSONKeyText f _ -> Object . mapKeyVal f g
-        ToJSONKeyValue  f _ -> Array . V.fromList . map (toJSONPair f g) . M.toList
+        ToJSONKeyValue  f _ -> Array . map (toJSONPair f g) . M.toList
     {-# INLINE liftToJSON #-}
 
     liftToEncoding g _ = case toJSONKey of
@@ -1804,57 +1786,6 @@ instance ToJSONKey UUID.UUID where
         E.unsafeToEncoding . EB.quote . B.byteString . UUID.toASCIIBytes
 
 -------------------------------------------------------------------------------
--- vector
--------------------------------------------------------------------------------
-
-instance ToJSON1 Vector where
-    liftToJSON t _ = Array . V.map t
-    {-# INLINE liftToJSON #-}
-
-    liftToEncoding t _ =  listEncoding t . V.toList
-    {-# INLINE liftToEncoding #-}
-
-instance (ToJSON a) => ToJSON (Vector a) where
-    {-# SPECIALIZE instance ToJSON Array #-}
-
-    toJSON = toJSON1
-    {-# INLINE toJSON #-}
-
-    toEncoding = toEncoding1
-    {-# INLINE toEncoding #-}
-
-encodeVector :: (ToJSON a, VG.Vector v a) => v a -> Encoding
-encodeVector = listEncoding toEncoding . VG.toList
-{-# INLINE encodeVector #-}
-
-vectorToJSON :: (VG.Vector v a, ToJSON a) => v a -> Value
-vectorToJSON = Array . V.map toJSON . V.convert
-{-# INLINE vectorToJSON #-}
-
-instance (Storable a, ToJSON a) => ToJSON (VS.Vector a) where
-    toJSON = vectorToJSON
-    {-# INLINE toJSON #-}
-
-    toEncoding = encodeVector
-    {-# INLINE toEncoding #-}
-
-
-instance (VP.Prim a, ToJSON a) => ToJSON (VP.Vector a) where
-    toJSON = vectorToJSON
-    {-# INLINE toJSON #-}
-
-    toEncoding = encodeVector
-    {-# INLINE toEncoding #-}
-
-
-instance (VG.Vector VU.Vector a, ToJSON a) => ToJSON (VU.Vector a) where
-    toJSON = vectorToJSON
-    {-# INLINE toJSON #-}
-
-    toEncoding = encodeVector
-    {-# INLINE toEncoding #-}
-
--------------------------------------------------------------------------------
 -- aeson
 -------------------------------------------------------------------------------
 
@@ -1882,8 +1813,6 @@ formatMillis = take 3 . formatTime defaultTimeLocale "%q"
 -------------------------------------------------------------------------------
 
 instance ToJSON a => ToJSON (PM.Array a) where
-  -- note: we could do better than this if vector exposed the data
-  -- constructor in Data.Vector.
   toJSON = toJSON . Exts.toList
   toEncoding = toEncoding . Exts.toList
 
@@ -2168,11 +2097,7 @@ instance (ToJSONKey a, ToJSON a) => ToJSONKey [a] where
 -------------------------------------------------------------------------------
 
 instance ToJSON2 (,) where
-    liftToJSON2 toA _ toB _ (a, b) = Array $ V.create $ do
-        mv <- VM.unsafeNew 2
-        VM.unsafeWrite mv 0 (toA a)
-        VM.unsafeWrite mv 1 (toB b)
-        return mv
+    liftToJSON2 toA _ toB _ (a, b) = Array [toA a, toB b]
     {-# INLINE liftToJSON2 #-}
 
     liftToEncoding2 toA _ toB _ (a, b) = E.list id [toA a, toB b]
@@ -2191,12 +2116,7 @@ instance (ToJSON a, ToJSON b) => ToJSON (a, b) where
     {-# INLINE toEncoding #-}
 
 instance (ToJSON a) => ToJSON2 ((,,) a) where
-    liftToJSON2 toB _ toC _ (a, b, c) = Array $ V.create $ do
-        mv <- VM.unsafeNew 3
-        VM.unsafeWrite mv 0 (toJSON a)
-        VM.unsafeWrite mv 1 (toB b)
-        VM.unsafeWrite mv 2 (toC c)
-        return mv
+    liftToJSON2 toB _ toC _ (a, b, c) = Array [toJSON a, toB b, toC c]
     {-# INLINE liftToJSON2 #-}
 
     liftToEncoding2 toB _ toC _ (a, b, c) = E.list id
@@ -2219,13 +2139,7 @@ instance (ToJSON a, ToJSON b, ToJSON c) => ToJSON (a, b, c) where
     {-# INLINE toEncoding #-}
 
 instance (ToJSON a, ToJSON b) => ToJSON2 ((,,,) a b) where
-    liftToJSON2 toC _ toD _ (a, b, c, d) = Array $ V.create $ do
-        mv <- VM.unsafeNew 4
-        VM.unsafeWrite mv 0 (toJSON a)
-        VM.unsafeWrite mv 1 (toJSON b)
-        VM.unsafeWrite mv 2 (toC c)
-        VM.unsafeWrite mv 3 (toD d)
-        return mv
+    liftToJSON2 toC _ toD _ (a, b, c, d) = Array [toJSON a, toJSON b, toC c, toD d]
     {-# INLINE liftToJSON2 #-}
 
     liftToEncoding2 toC _ toD _ (a, b, c, d) = E.list id
@@ -2249,14 +2163,7 @@ instance (ToJSON a, ToJSON b, ToJSON c, ToJSON d) => ToJSON (a, b, c, d) where
     {-# INLINE toEncoding #-}
 
 instance (ToJSON a, ToJSON b, ToJSON c) => ToJSON2 ((,,,,) a b c) where
-    liftToJSON2 toD _ toE _ (a, b, c, d, e) = Array $ V.create $ do
-        mv <- VM.unsafeNew 5
-        VM.unsafeWrite mv 0 (toJSON a)
-        VM.unsafeWrite mv 1 (toJSON b)
-        VM.unsafeWrite mv 2 (toJSON c)
-        VM.unsafeWrite mv 3 (toD d)
-        VM.unsafeWrite mv 4 (toE e)
-        return mv
+    liftToJSON2 toD _ toE _ (a, b, c, d, e) = Array [toJSON a, toJSON b, toJSON c, toD d, toE e]
     {-# INLINE liftToJSON2 #-}
 
     liftToEncoding2 toD _ toE _ (a, b, c, d, e) = E.list id
@@ -2281,15 +2188,7 @@ instance (ToJSON a, ToJSON b, ToJSON c, ToJSON d, ToJSON e) => ToJSON (a, b, c, 
     {-# INLINE toEncoding #-}
 
 instance (ToJSON a, ToJSON b, ToJSON c, ToJSON d) => ToJSON2 ((,,,,,) a b c d) where
-    liftToJSON2 toE _ toF _ (a, b, c, d, e, f) = Array $ V.create $ do
-        mv <- VM.unsafeNew 6
-        VM.unsafeWrite mv 0 (toJSON a)
-        VM.unsafeWrite mv 1 (toJSON b)
-        VM.unsafeWrite mv 2 (toJSON c)
-        VM.unsafeWrite mv 3 (toJSON d)
-        VM.unsafeWrite mv 4 (toE e)
-        VM.unsafeWrite mv 5 (toF f)
-        return mv
+    liftToJSON2 toE _ toF _ (a, b, c, d, e, f) = Array [toJSON a, toJSON b, toJSON c, toJSON d, toE e, toF f]
     {-# INLINE liftToJSON2 #-}
 
     liftToEncoding2 toE _ toF _ (a, b, c, d, e, f) = E.list id
@@ -2315,16 +2214,7 @@ instance (ToJSON a, ToJSON b, ToJSON c, ToJSON d, ToJSON e, ToJSON f) => ToJSON 
     {-# INLINE toEncoding #-}
 
 instance (ToJSON a, ToJSON b, ToJSON c, ToJSON d, ToJSON e) => ToJSON2 ((,,,,,,) a b c d e) where
-    liftToJSON2 toF _ toG _ (a, b, c, d, e, f, g) = Array $ V.create $ do
-        mv <- VM.unsafeNew 7
-        VM.unsafeWrite mv 0 (toJSON a)
-        VM.unsafeWrite mv 1 (toJSON b)
-        VM.unsafeWrite mv 2 (toJSON c)
-        VM.unsafeWrite mv 3 (toJSON d)
-        VM.unsafeWrite mv 4 (toJSON e)
-        VM.unsafeWrite mv 5 (toF f)
-        VM.unsafeWrite mv 6 (toG g)
-        return mv
+    liftToJSON2 toF _ toG _ (a, b, c, d, e, f, g) = Array [toJSON a, toJSON b, toJSON c, toJSON d, toJSON e, toF f, toG g]
     {-# INLINE liftToJSON2 #-}
 
     liftToEncoding2 toF _ toG _ (a, b, c, d, e, f, g) = E.list id
@@ -2351,17 +2241,7 @@ instance (ToJSON a, ToJSON b, ToJSON c, ToJSON d, ToJSON e, ToJSON f, ToJSON g) 
     {-# INLINE toEncoding #-}
 
 instance (ToJSON a, ToJSON b, ToJSON c, ToJSON d, ToJSON e, ToJSON f) => ToJSON2 ((,,,,,,,) a b c d e f) where
-    liftToJSON2 toG _ toH _ (a, b, c, d, e, f, g, h) = Array $ V.create $ do
-        mv <- VM.unsafeNew 8
-        VM.unsafeWrite mv 0 (toJSON a)
-        VM.unsafeWrite mv 1 (toJSON b)
-        VM.unsafeWrite mv 2 (toJSON c)
-        VM.unsafeWrite mv 3 (toJSON d)
-        VM.unsafeWrite mv 4 (toJSON e)
-        VM.unsafeWrite mv 5 (toJSON f)
-        VM.unsafeWrite mv 6 (toG g)
-        VM.unsafeWrite mv 7 (toH h)
-        return mv
+    liftToJSON2 toG _ toH _ (a, b, c, d, e, f, g, h) = Array [toJSON a, toJSON b, toJSON c, toJSON d, toJSON e, toJSON f, toG g, toH h]
     {-# INLINE liftToJSON2 #-}
 
     liftToEncoding2 toG _ toH _ (a, b, c, d, e, f, g, h) = E.list id
@@ -2389,18 +2269,7 @@ instance (ToJSON a, ToJSON b, ToJSON c, ToJSON d, ToJSON e, ToJSON f, ToJSON g, 
     {-# INLINE toEncoding #-}
 
 instance (ToJSON a, ToJSON b, ToJSON c, ToJSON d, ToJSON e, ToJSON f, ToJSON g) => ToJSON2 ((,,,,,,,,) a b c d e f g) where
-    liftToJSON2 toH _ toI _ (a, b, c, d, e, f, g, h, i) = Array $ V.create $ do
-        mv <- VM.unsafeNew 9
-        VM.unsafeWrite mv 0 (toJSON a)
-        VM.unsafeWrite mv 1 (toJSON b)
-        VM.unsafeWrite mv 2 (toJSON c)
-        VM.unsafeWrite mv 3 (toJSON d)
-        VM.unsafeWrite mv 4 (toJSON e)
-        VM.unsafeWrite mv 5 (toJSON f)
-        VM.unsafeWrite mv 6 (toJSON g)
-        VM.unsafeWrite mv 7 (toH h)
-        VM.unsafeWrite mv 8 (toI i)
-        return mv
+    liftToJSON2 toH _ toI _ (a, b, c, d, e, f, g, h, i) = Array [toJSON a, toJSON b, toJSON c, toJSON d, toJSON e, toJSON f, toJSON g, toH h, toI i]
     {-# INLINE liftToJSON2 #-}
 
     liftToEncoding2 toH _ toI _ (a, b, c, d, e, f, g, h, i) = E.list id
@@ -2429,19 +2298,7 @@ instance (ToJSON a, ToJSON b, ToJSON c, ToJSON d, ToJSON e, ToJSON f, ToJSON g, 
     {-# INLINE toEncoding #-}
 
 instance (ToJSON a, ToJSON b, ToJSON c, ToJSON d, ToJSON e, ToJSON f, ToJSON g, ToJSON h) => ToJSON2 ((,,,,,,,,,) a b c d e f g h) where
-    liftToJSON2 toI _ toJ _ (a, b, c, d, e, f, g, h, i, j) = Array $ V.create $ do
-        mv <- VM.unsafeNew 10
-        VM.unsafeWrite mv 0 (toJSON a)
-        VM.unsafeWrite mv 1 (toJSON b)
-        VM.unsafeWrite mv 2 (toJSON c)
-        VM.unsafeWrite mv 3 (toJSON d)
-        VM.unsafeWrite mv 4 (toJSON e)
-        VM.unsafeWrite mv 5 (toJSON f)
-        VM.unsafeWrite mv 6 (toJSON g)
-        VM.unsafeWrite mv 7 (toJSON h)
-        VM.unsafeWrite mv 8 (toI i)
-        VM.unsafeWrite mv 9 (toJ j)
-        return mv
+    liftToJSON2 toI _ toJ _ (a, b, c, d, e, f, g, h, i, j) = Array [toJSON a, toJSON b, toJSON c, toJSON d, toJSON e, toJSON f, toJSON g, toJSON h, toI i, toJ j]
     {-# INLINE liftToJSON2 #-}
 
     liftToEncoding2 toI _ toJ _ (a, b, c, d, e, f, g, h, i, j) = E.list id
@@ -2471,20 +2328,7 @@ instance (ToJSON a, ToJSON b, ToJSON c, ToJSON d, ToJSON e, ToJSON f, ToJSON g, 
     {-# INLINE toEncoding #-}
 
 instance (ToJSON a, ToJSON b, ToJSON c, ToJSON d, ToJSON e, ToJSON f, ToJSON g, ToJSON h, ToJSON i) => ToJSON2 ((,,,,,,,,,,) a b c d e f g h i) where
-    liftToJSON2 toJ _ toK _ (a, b, c, d, e, f, g, h, i, j, k) = Array $ V.create $ do
-        mv <- VM.unsafeNew 11
-        VM.unsafeWrite mv 0 (toJSON a)
-        VM.unsafeWrite mv 1 (toJSON b)
-        VM.unsafeWrite mv 2 (toJSON c)
-        VM.unsafeWrite mv 3 (toJSON d)
-        VM.unsafeWrite mv 4 (toJSON e)
-        VM.unsafeWrite mv 5 (toJSON f)
-        VM.unsafeWrite mv 6 (toJSON g)
-        VM.unsafeWrite mv 7 (toJSON h)
-        VM.unsafeWrite mv 8 (toJSON i)
-        VM.unsafeWrite mv 9 (toJ j)
-        VM.unsafeWrite mv 10 (toK k)
-        return mv
+    liftToJSON2 toJ _ toK _ (a, b, c, d, e, f, g, h, i, j, k) = Array [toJSON a, toJSON b, toJSON c, toJSON d, toJSON e, toJSON f, toJSON g, toJSON h, toJSON i, toJ j, toK k]
     {-# INLINE liftToJSON2 #-}
 
     liftToEncoding2 toJ _ toK _ (a, b, c, d, e, f, g, h, i, j, k) = E.list id
@@ -2515,21 +2359,7 @@ instance (ToJSON a, ToJSON b, ToJSON c, ToJSON d, ToJSON e, ToJSON f, ToJSON g, 
     {-# INLINE toEncoding #-}
 
 instance (ToJSON a, ToJSON b, ToJSON c, ToJSON d, ToJSON e, ToJSON f, ToJSON g, ToJSON h, ToJSON i, ToJSON j) => ToJSON2 ((,,,,,,,,,,,) a b c d e f g h i j) where
-    liftToJSON2 toK _ toL _ (a, b, c, d, e, f, g, h, i, j, k, l) = Array $ V.create $ do
-        mv <- VM.unsafeNew 12
-        VM.unsafeWrite mv 0 (toJSON a)
-        VM.unsafeWrite mv 1 (toJSON b)
-        VM.unsafeWrite mv 2 (toJSON c)
-        VM.unsafeWrite mv 3 (toJSON d)
-        VM.unsafeWrite mv 4 (toJSON e)
-        VM.unsafeWrite mv 5 (toJSON f)
-        VM.unsafeWrite mv 6 (toJSON g)
-        VM.unsafeWrite mv 7 (toJSON h)
-        VM.unsafeWrite mv 8 (toJSON i)
-        VM.unsafeWrite mv 9 (toJSON j)
-        VM.unsafeWrite mv 10 (toK k)
-        VM.unsafeWrite mv 11 (toL l)
-        return mv
+    liftToJSON2 toK _ toL _ (a, b, c, d, e, f, g, h, i, j, k, l) = Array [toJSON a, toJSON b, toJSON c, toJSON d, toJSON e, toJSON f, toJSON g, toJSON h, toJSON i, toJSON j, toK k, toL l]
     {-# INLINE liftToJSON2 #-}
 
     liftToEncoding2 toK _ toL _ (a, b, c, d, e, f, g, h, i, j, k, l) = E.list id
@@ -2561,22 +2391,7 @@ instance (ToJSON a, ToJSON b, ToJSON c, ToJSON d, ToJSON e, ToJSON f, ToJSON g, 
     {-# INLINE toEncoding #-}
 
 instance (ToJSON a, ToJSON b, ToJSON c, ToJSON d, ToJSON e, ToJSON f, ToJSON g, ToJSON h, ToJSON i, ToJSON j, ToJSON k) => ToJSON2 ((,,,,,,,,,,,,) a b c d e f g h i j k) where
-    liftToJSON2 toL _ toM _ (a, b, c, d, e, f, g, h, i, j, k, l, m) = Array $ V.create $ do
-        mv <- VM.unsafeNew 13
-        VM.unsafeWrite mv 0 (toJSON a)
-        VM.unsafeWrite mv 1 (toJSON b)
-        VM.unsafeWrite mv 2 (toJSON c)
-        VM.unsafeWrite mv 3 (toJSON d)
-        VM.unsafeWrite mv 4 (toJSON e)
-        VM.unsafeWrite mv 5 (toJSON f)
-        VM.unsafeWrite mv 6 (toJSON g)
-        VM.unsafeWrite mv 7 (toJSON h)
-        VM.unsafeWrite mv 8 (toJSON i)
-        VM.unsafeWrite mv 9 (toJSON j)
-        VM.unsafeWrite mv 10 (toJSON k)
-        VM.unsafeWrite mv 11 (toL l)
-        VM.unsafeWrite mv 12 (toM m)
-        return mv
+    liftToJSON2 toL _ toM _ (a, b, c, d, e, f, g, h, i, j, k, l, m) = Array [toJSON a, toJSON b, toJSON c, toJSON d, toJSON e, toJSON f, toJSON g, toJSON h, toJSON i, toJSON j, toJSON k, toL l, toM m]
     {-# INLINE liftToJSON2 #-}
 
     liftToEncoding2 toL _ toM _ (a, b, c, d, e, f, g, h, i, j, k, l, m) = E.list id
@@ -2609,23 +2424,7 @@ instance (ToJSON a, ToJSON b, ToJSON c, ToJSON d, ToJSON e, ToJSON f, ToJSON g, 
     {-# INLINE toEncoding #-}
 
 instance (ToJSON a, ToJSON b, ToJSON c, ToJSON d, ToJSON e, ToJSON f, ToJSON g, ToJSON h, ToJSON i, ToJSON j, ToJSON k, ToJSON l) => ToJSON2 ((,,,,,,,,,,,,,) a b c d e f g h i j k l) where
-    liftToJSON2 toM _ toN _ (a, b, c, d, e, f, g, h, i, j, k, l, m, n) = Array $ V.create $ do
-        mv <- VM.unsafeNew 14
-        VM.unsafeWrite mv 0 (toJSON a)
-        VM.unsafeWrite mv 1 (toJSON b)
-        VM.unsafeWrite mv 2 (toJSON c)
-        VM.unsafeWrite mv 3 (toJSON d)
-        VM.unsafeWrite mv 4 (toJSON e)
-        VM.unsafeWrite mv 5 (toJSON f)
-        VM.unsafeWrite mv 6 (toJSON g)
-        VM.unsafeWrite mv 7 (toJSON h)
-        VM.unsafeWrite mv 8 (toJSON i)
-        VM.unsafeWrite mv 9 (toJSON j)
-        VM.unsafeWrite mv 10 (toJSON k)
-        VM.unsafeWrite mv 11 (toJSON l)
-        VM.unsafeWrite mv 12 (toM m)
-        VM.unsafeWrite mv 13 (toN n)
-        return mv
+    liftToJSON2 toM _ toN _ (a, b, c, d, e, f, g, h, i, j, k, l, m, n) = Array [toJSON a, toJSON b, toJSON c, toJSON d, toJSON e, toJSON f, toJSON g, toJSON h, toJSON i, toJSON j, toJSON k, toJSON l, toM m, toN n]
     {-# INLINE liftToJSON2 #-}
 
     liftToEncoding2 toM _ toN _ (a, b, c, d, e, f, g, h, i, j, k, l, m, n) = E.list id
@@ -2659,24 +2458,7 @@ instance (ToJSON a, ToJSON b, ToJSON c, ToJSON d, ToJSON e, ToJSON f, ToJSON g, 
     {-# INLINE toEncoding #-}
 
 instance (ToJSON a, ToJSON b, ToJSON c, ToJSON d, ToJSON e, ToJSON f, ToJSON g, ToJSON h, ToJSON i, ToJSON j, ToJSON k, ToJSON l, ToJSON m) => ToJSON2 ((,,,,,,,,,,,,,,) a b c d e f g h i j k l m) where
-    liftToJSON2 toN _ toO _ (a, b, c, d, e, f, g, h, i, j, k, l, m, n, o) = Array $ V.create $ do
-        mv <- VM.unsafeNew 15
-        VM.unsafeWrite mv 0 (toJSON a)
-        VM.unsafeWrite mv 1 (toJSON b)
-        VM.unsafeWrite mv 2 (toJSON c)
-        VM.unsafeWrite mv 3 (toJSON d)
-        VM.unsafeWrite mv 4 (toJSON e)
-        VM.unsafeWrite mv 5 (toJSON f)
-        VM.unsafeWrite mv 6 (toJSON g)
-        VM.unsafeWrite mv 7 (toJSON h)
-        VM.unsafeWrite mv 8 (toJSON i)
-        VM.unsafeWrite mv 9 (toJSON j)
-        VM.unsafeWrite mv 10 (toJSON k)
-        VM.unsafeWrite mv 11 (toJSON l)
-        VM.unsafeWrite mv 12 (toJSON m)
-        VM.unsafeWrite mv 13 (toN n)
-        VM.unsafeWrite mv 14 (toO o)
-        return mv
+    liftToJSON2 toN _ toO _ (a, b, c, d, e, f, g, h, i, j, k, l, m, n, o) = Array [toJSON a, toJSON b, toJSON c, toJSON d, toJSON e, toJSON f, toJSON g, toJSON h, toJSON i, toJSON j, toJSON k, toJSON l, toJSON m, toN n, toO o]
     {-# INLINE liftToJSON2 #-}
 
     liftToEncoding2 toN _ toO _ (a, b, c, d, e, f, g, h, i, j, k, l, m, n, o) = E.list id

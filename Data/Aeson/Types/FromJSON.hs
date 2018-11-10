@@ -96,11 +96,9 @@ import Data.Time (Day, DiffTime, LocalTime, NominalDiffTime, TimeOfDay, UTCTime,
 import Data.Time.Format (parseTime)
 import Data.Time.Locale.Compat (defaultTimeLocale)
 import Data.Traversable as Tr (sequence)
-import Data.Vector (Vector)
 import Data.Version (Version, parseVersion)
 import Data.Void (Void)
 import Data.Word (Word16, Word32, Word64, Word8)
-import Foreign.Storable (Storable)
 import Foreign.C.Types (CTime (..))
 import GHC.Generics
 import Numeric.Natural (Natural)
@@ -123,11 +121,6 @@ import qualified Data.Text.Encoding as T
 import qualified Data.Text.Lazy as LT
 import qualified Data.Tree as Tree
 import qualified Data.UUID.Types as UUID
-import qualified Data.Vector as V
-import qualified Data.Vector.Generic as VG
-import qualified Data.Vector.Primitive as VP
-import qualified Data.Vector.Storable as VS
-import qualified Data.Vector.Unboxed as VU
 
 import qualified GHC.Exts as Exts
 import qualified Data.Primitive.Array as PM
@@ -148,7 +141,7 @@ parseIndexedJSONPair :: (Value -> Parser a) -> (Value -> Parser b) -> Int -> Val
 parseIndexedJSONPair keyParser valParser idx value = p value <?> Index idx
   where
     p = withArray "(k,v)" $ \ab ->
-        let n = V.length ab
+        let n = length ab
         in if n == 2
              then (,) <$> parseJSONElemAtIndex keyParser 0 ab
                       <*> parseJSONElemAtIndex valParser 1 ab
@@ -156,8 +149,8 @@ parseIndexedJSONPair keyParser valParser idx value = p value <?> Index idx
                          show n ++ " into a pair"
 {-# INLINE parseIndexedJSONPair #-}
 
-parseJSONElemAtIndex :: (Value -> Parser a) -> Int -> V.Vector Value -> Parser a
-parseJSONElemAtIndex p idx ary = p (V.unsafeIndex ary idx) <?> Index idx
+parseJSONElemAtIndex :: (Value -> Parser a) -> Int -> [Value] -> Parser a
+parseJSONElemAtIndex p idx ary = p (ary !! idx) <?> Index idx
 
 parseRealFloat :: RealFloat a => String -> Value -> Parser a
 parseRealFloat _        (Number s) = pure $ Scientific.toRealFloat s
@@ -352,9 +345,7 @@ class FromJSON a where
 
     parseJSONList :: Value -> Parser [a]
     parseJSONList (Array a)
-        = zipWithM (parseIndexedJSON parseJSON) [0..]
-        . V.toList
-        $ a
+        = zipWithM (parseIndexedJSON parseJSON) [0..] a
 
     parseJSONList v = typeMismatch "[a]" v
 
@@ -557,7 +548,7 @@ class FromJSON2 f where
         -> (Value -> Parser [b])
         -> Value -> Parser [f a b]
     liftParseJSONList2 fa ga fb gb v = case v of
-        Array vals -> fmap V.toList (V.mapM (liftParseJSON2 fa ga fb gb) vals)
+        Array vals -> mapM (liftParseJSON2 fa ga fb gb) vals
         _ -> typeMismatch "[a]" v
 
 -- | Lift the standard 'parseJSON' function through the type constructor.
@@ -571,7 +562,7 @@ parseJSON2 = liftParseJSON2 parseJSON parseJSONList parseJSON parseJSONList
 
 -- | Helper function to use with 'liftParseJSON'. See 'Data.Aeson.ToJSON.listEncoding'.
 listParser :: (Value -> Parser a) -> Value -> Parser [a]
-listParser f (Array xs) = fmap V.toList (V.mapM f xs)
+listParser f (Array xs) = mapM f xs
 listParser _ v          = typeMismatch "[a]" v
 {-# INLINE listParser #-}
 
@@ -812,7 +803,7 @@ instance ( FromProduct arity a, FromProduct arity b
     -- got an array of the same size as the product, then parse each of the
     -- product's elements using parseProduct:
     gParseJSON opts fargs = withArray "product (:*:)" $ \arr ->
-      let lenArray = V.length arr
+      let lenArray = length arr
           lenProduct = (unTagged2 :: Tagged2 (a :*: b) Int -> Int)
                        productSize in
       if lenArray == lenProduct
@@ -906,10 +897,10 @@ parseNonAllNullarySum opts fargs =
 
       TwoElemArray ->
           withArray "Array" $ \arr ->
-            if V.length arr == 2
-            then case V.unsafeIndex arr 0 of
+            if length arr == 2
+            then case head arr of
                    String tag -> fromMaybe (notFound tag) $
-                                   parsePair opts fargs (tag, V.unsafeIndex arr 1)
+                                   parsePair opts fargs (tag, arr !! 1)
                    _ -> fail "First element is not a String"
             else fail "Array doesn't have 2 elements"
 
@@ -1053,7 +1044,7 @@ instance ( FromProduct    arity a
 
 instance (GFromJSON arity a) => FromProduct arity (S1 s a) where
     parseProduct opts fargs arr ix _ =
-      gParseJSON opts fargs $ V.unsafeIndex arr ix
+      gParseJSON opts fargs $ arr !! ix
 
 --------------------------------------------------------------------------------
 
@@ -1198,7 +1189,7 @@ instance FromJSON Ordering where
 
 instance FromJSON () where
     parseJSON = withArray "()" $ \v ->
-                  if V.null v
+                  if null v
                     then pure ()
                     else fail "Expected an empty array"
     {-# INLINE parseJSON #-}
@@ -1389,7 +1380,7 @@ parseVersionText = go . readP_to_S parseVersion . unpack
 
 instance FromJSON1 NonEmpty where
     liftParseJSON p _ = withArray "NonEmpty a" $
-        (>>= ne) . Tr.sequence . zipWith (parseIndexedJSON p) [0..] . V.toList
+        (>>= ne) . Tr.sequence . zipWith (parseIndexedJSON p) [0..]
       where
         ne []     = fail "Expected a NonEmpty but got an empty list"
         ne (x:xs) = pure (x :| xs)
@@ -1414,7 +1405,7 @@ instance FromJSON Scientific where
 instance FromJSON1 DList.DList where
     liftParseJSON p _ = withArray "DList a" $
       fmap DList.fromList .
-      Tr.sequence . zipWith (parseIndexedJSON p) [0..] . V.toList
+      Tr.sequence . zipWith (parseIndexedJSON p) [0..]
     {-# INLINE liftParseJSON #-}
 
 instance (FromJSON a) => FromJSON (DList.DList a) where
@@ -1505,7 +1496,7 @@ instance (FromJSON1 f, FromJSON1 g, FromJSON a) => FromJSON (Sum f g a) where
 instance FromJSON1 Seq.Seq where
     liftParseJSON p _ = withArray "Seq a" $
       fmap Seq.fromList .
-      Tr.sequence . zipWith (parseIndexedJSON p) [0..] . V.toList
+      Tr.sequence . zipWith (parseIndexedJSON p) [0..]
     {-# INLINE liftParseJSON #-}
 
 instance (FromJSON a) => FromJSON (Seq.Seq a) where
@@ -1544,7 +1535,7 @@ instance (FromJSONKey k, Ord k) => FromJSON1 (M.Map k) where
             M.foldrWithKey (\k v m -> M.insert <$> f k <?> Key k <*> p v <?> Key k <*> m) (pure M.empty)
         FromJSONKeyValue f -> withArray "Map k v" $ \arr ->
             fmap M.fromList . Tr.sequence .
-                zipWith (parseIndexedJSONPair f p) [0..] . V.toList $ arr
+                zipWith (parseIndexedJSONPair f p) [0..] $ arr
     {-# INLINE liftParseJSON #-}
 
 instance (FromJSONKey k, Ord k, FromJSON v) => FromJSON (M.Map k v) where
@@ -1577,35 +1568,6 @@ instance FromJSONKey UUID.UUID where
         maybe (fail "Invalid UUID") pure . UUID.fromText
 
 -------------------------------------------------------------------------------
--- vector
--------------------------------------------------------------------------------
-
-instance FromJSON1 Vector where
-    liftParseJSON p _ = withArray "Vector a" $
-        V.mapM (uncurry $ parseIndexedJSON p) . V.indexed
-    {-# INLINE liftParseJSON #-}
-
-instance (FromJSON a) => FromJSON (Vector a) where
-    parseJSON = parseJSON1
-    {-# INLINE parseJSON #-}
-
-
-vectorParseJSON :: (FromJSON a, VG.Vector w a) => String -> Value -> Parser (w a)
-vectorParseJSON s = withArray s $ fmap V.convert . V.mapM (uncurry $ parseIndexedJSON parseJSON) . V.indexed
-{-# INLINE vectorParseJSON #-}
-
-instance (Storable a, FromJSON a) => FromJSON (VS.Vector a) where
-    parseJSON = vectorParseJSON "Data.Vector.Storable.Vector a"
-
-instance (VP.Prim a, FromJSON a) => FromJSON (VP.Vector a) where
-    parseJSON = vectorParseJSON "Data.Vector.Primitive.Vector a"
-    {-# INLINE parseJSON #-}
-
-instance (VG.Vector VU.Vector a, FromJSON a) => FromJSON (VU.Vector a) where
-    parseJSON = vectorParseJSON "Data.Vector.Unboxed.Vector a"
-    {-# INLINE parseJSON #-}
-
--------------------------------------------------------------------------------
 -- aeson
 -------------------------------------------------------------------------------
 
@@ -1627,8 +1589,6 @@ instance FromJSON DotNetTime where
 -------------------------------------------------------------------------------
 
 instance FromJSON a => FromJSON (PM.Array a) where
-  -- note: we could do better than this if vector exposed the data
-  -- constructor in Data.Vector.
   parseJSON = fmap Exts.fromList . parseJSON
 
 instance FromJSON a => FromJSON (PM.SmallArray a) where
@@ -1876,7 +1836,7 @@ instance (FromJSONKey a, FromJSON a) => FromJSONKey [a] where
 
 instance FromJSON2 (,) where
     liftParseJSON2 pA _ pB _ = withArray "(a, b)" $ \t ->
-        let n = V.length t
+        let n = length t
         in if n == 2
             then (,)
                 <$> parseJSONElemAtIndex pA 0 t
@@ -1895,7 +1855,7 @@ instance (FromJSON a, FromJSON b) => FromJSON (a, b) where
 
 instance (FromJSON a) => FromJSON2 ((,,) a) where
     liftParseJSON2 pB _ pC _ = withArray "(a, b, c)" $ \t ->
-        let n = V.length t
+        let n = length t
         in if n == 3
             then (,,)
                 <$> parseJSONElemAtIndex parseJSON 0 t
@@ -1915,7 +1875,7 @@ instance (FromJSON a, FromJSON b, FromJSON c) => FromJSON (a, b, c) where
 
 instance (FromJSON a, FromJSON b) => FromJSON2 ((,,,) a b) where
     liftParseJSON2 pC _ pD _ = withArray "(a, b, c, d)" $ \t ->
-        let n = V.length t
+        let n = length t
         in if n == 4
             then (,,,)
                 <$> parseJSONElemAtIndex parseJSON 0 t
@@ -1936,7 +1896,7 @@ instance (FromJSON a, FromJSON b, FromJSON c, FromJSON d) => FromJSON (a, b, c, 
 
 instance (FromJSON a, FromJSON b, FromJSON c) => FromJSON2 ((,,,,) a b c) where
     liftParseJSON2 pD _ pE _ = withArray "(a, b, c, d, e)" $ \t ->
-        let n = V.length t
+        let n = length t
         in if n == 5
             then (,,,,)
                 <$> parseJSONElemAtIndex parseJSON 0 t
@@ -1958,7 +1918,7 @@ instance (FromJSON a, FromJSON b, FromJSON c, FromJSON d, FromJSON e) => FromJSO
 
 instance (FromJSON a, FromJSON b, FromJSON c, FromJSON d) => FromJSON2 ((,,,,,) a b c d) where
     liftParseJSON2 pE _ pF _ = withArray "(a, b, c, d, e, f)" $ \t ->
-        let n = V.length t
+        let n = length t
         in if n == 6
             then (,,,,,)
                 <$> parseJSONElemAtIndex parseJSON 0 t
@@ -1981,7 +1941,7 @@ instance (FromJSON a, FromJSON b, FromJSON c, FromJSON d, FromJSON e, FromJSON f
 
 instance (FromJSON a, FromJSON b, FromJSON c, FromJSON d, FromJSON e) => FromJSON2 ((,,,,,,) a b c d e) where
     liftParseJSON2 pF _ pG _ = withArray "(a, b, c, d, e, f, g)" $ \t ->
-        let n = V.length t
+        let n = length t
         in if n == 7
             then (,,,,,,)
                 <$> parseJSONElemAtIndex parseJSON 0 t
@@ -2005,7 +1965,7 @@ instance (FromJSON a, FromJSON b, FromJSON c, FromJSON d, FromJSON e, FromJSON f
 
 instance (FromJSON a, FromJSON b, FromJSON c, FromJSON d, FromJSON e, FromJSON f) => FromJSON2 ((,,,,,,,) a b c d e f) where
     liftParseJSON2 pG _ pH _ = withArray "(a, b, c, d, e, f, g, h)" $ \t ->
-        let n = V.length t
+        let n = length t
         in if n == 8
             then (,,,,,,,)
                 <$> parseJSONElemAtIndex parseJSON 0 t
@@ -2030,7 +1990,7 @@ instance (FromJSON a, FromJSON b, FromJSON c, FromJSON d, FromJSON e, FromJSON f
 
 instance (FromJSON a, FromJSON b, FromJSON c, FromJSON d, FromJSON e, FromJSON f, FromJSON g) => FromJSON2 ((,,,,,,,,) a b c d e f g) where
     liftParseJSON2 pH _ pI _ = withArray "(a, b, c, d, e, f, g, h, i)" $ \t ->
-        let n = V.length t
+        let n = length t
         in if n == 9
             then (,,,,,,,,)
                 <$> parseJSONElemAtIndex parseJSON 0 t
@@ -2056,7 +2016,7 @@ instance (FromJSON a, FromJSON b, FromJSON c, FromJSON d, FromJSON e, FromJSON f
 
 instance (FromJSON a, FromJSON b, FromJSON c, FromJSON d, FromJSON e, FromJSON f, FromJSON g, FromJSON h) => FromJSON2 ((,,,,,,,,,) a b c d e f g h) where
     liftParseJSON2 pI _ pJ _ = withArray "(a, b, c, d, e, f, g, h, i, j)" $ \t ->
-        let n = V.length t
+        let n = length t
         in if n == 10
             then (,,,,,,,,,)
                 <$> parseJSONElemAtIndex parseJSON 0 t
@@ -2083,7 +2043,7 @@ instance (FromJSON a, FromJSON b, FromJSON c, FromJSON d, FromJSON e, FromJSON f
 
 instance (FromJSON a, FromJSON b, FromJSON c, FromJSON d, FromJSON e, FromJSON f, FromJSON g, FromJSON h, FromJSON i) => FromJSON2 ((,,,,,,,,,,) a b c d e f g h i) where
     liftParseJSON2 pJ _ pK _ = withArray "(a, b, c, d, e, f, g, h, i, j, k)" $ \t ->
-        let n = V.length t
+        let n = length t
         in if n == 11
             then (,,,,,,,,,,)
                 <$> parseJSONElemAtIndex parseJSON 0 t
@@ -2111,7 +2071,7 @@ instance (FromJSON a, FromJSON b, FromJSON c, FromJSON d, FromJSON e, FromJSON f
 
 instance (FromJSON a, FromJSON b, FromJSON c, FromJSON d, FromJSON e, FromJSON f, FromJSON g, FromJSON h, FromJSON i, FromJSON j) => FromJSON2 ((,,,,,,,,,,,) a b c d e f g h i j) where
     liftParseJSON2 pK _ pL _ = withArray "(a, b, c, d, e, f, g, h, i, j, k, l)" $ \t ->
-        let n = V.length t
+        let n = length t
         in if n == 12
             then (,,,,,,,,,,,)
                 <$> parseJSONElemAtIndex parseJSON 0 t
@@ -2140,7 +2100,7 @@ instance (FromJSON a, FromJSON b, FromJSON c, FromJSON d, FromJSON e, FromJSON f
 
 instance (FromJSON a, FromJSON b, FromJSON c, FromJSON d, FromJSON e, FromJSON f, FromJSON g, FromJSON h, FromJSON i, FromJSON j, FromJSON k) => FromJSON2 ((,,,,,,,,,,,,) a b c d e f g h i j k) where
     liftParseJSON2 pL _ pM _ = withArray "(a, b, c, d, e, f, g, h, i, j, k, l, m)" $ \t ->
-        let n = V.length t
+        let n = length t
         in if n == 13
             then (,,,,,,,,,,,,)
                 <$> parseJSONElemAtIndex parseJSON 0 t
@@ -2170,7 +2130,7 @@ instance (FromJSON a, FromJSON b, FromJSON c, FromJSON d, FromJSON e, FromJSON f
 
 instance (FromJSON a, FromJSON b, FromJSON c, FromJSON d, FromJSON e, FromJSON f, FromJSON g, FromJSON h, FromJSON i, FromJSON j, FromJSON k, FromJSON l) => FromJSON2 ((,,,,,,,,,,,,,) a b c d e f g h i j k l) where
     liftParseJSON2 pM _ pN _ = withArray "(a, b, c, d, e, f, g, h, i, j, k, l, m, n)" $ \t ->
-        let n = V.length t
+        let n = length t
         in if n == 14
             then (,,,,,,,,,,,,,)
                 <$> parseJSONElemAtIndex parseJSON 0 t
@@ -2201,7 +2161,7 @@ instance (FromJSON a, FromJSON b, FromJSON c, FromJSON d, FromJSON e, FromJSON f
 
 instance (FromJSON a, FromJSON b, FromJSON c, FromJSON d, FromJSON e, FromJSON f, FromJSON g, FromJSON h, FromJSON i, FromJSON j, FromJSON k, FromJSON l, FromJSON m) => FromJSON2 ((,,,,,,,,,,,,,,) a b c d e f g h i j k l m) where
     liftParseJSON2 pN _ pO _ = withArray "(a, b, c, d, e, f, g, h, i, j, k, l, m, n, o)" $ \t ->
-        let n = V.length t
+        let n = length t
         in if n == 15
             then (,,,,,,,,,,,,,,)
                 <$> parseJSONElemAtIndex parseJSON 0 t

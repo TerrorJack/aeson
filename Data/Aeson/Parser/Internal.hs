@@ -42,7 +42,6 @@ import Data.Aeson.Types.Internal (IResult(..), JSONPath, Result(..), Value(..))
 import Data.Attoparsec.ByteString.Char8 (Parser, char, decimal, endOfInput, isDigit_w8, signed, string)
 import Data.Scientific (Scientific)
 import Data.Text (Text)
-import Data.Vector as Vector (Vector, empty, fromListN, reverse)
 import qualified Data.Attoparsec.ByteString as A
 import qualified Data.Attoparsec.Lazy as L
 import qualified Data.ByteString as B
@@ -134,12 +133,12 @@ array_' = {-# SCC "array_'" #-} do
   !vals <- arrayValues value'
   return (Array vals)
 
-arrayValues :: Parser Value -> Parser (Vector Value)
+arrayValues :: Parser Value -> Parser [Value]
 arrayValues val = do
   skipSpace
   w <- A.peekWord8'
   if w == CLOSE_SQUARE
-    then A.anyWord8 >> return Vector.empty
+    then A.anyWord8 >> return mempty
     else loop [] 1
   where
     loop acc !len = do
@@ -147,7 +146,7 @@ arrayValues val = do
       ch <- A.satisfy $ \w -> w == COMMA || w == CLOSE_SQUARE
       if ch == COMMA
         then skipSpace >> loop (v:acc) (len+1)
-        else return (Vector.reverse (Vector.fromListN len (v:acc)))
+        else return (reverse (take len (v:acc)))
 {-# INLINE arrayValues #-}
 
 -- | Parse any JSON value.  You should usually 'json' in preference to

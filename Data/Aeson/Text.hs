@@ -35,7 +35,6 @@ import qualified Data.Map.Strict as M
 import qualified Data.Text as T
 import qualified Data.Text.Lazy as LT
 import qualified Data.Text.Lazy.Encoding as LT
-import qualified Data.Vector as V
 
 -- | Encode a JSON 'Value' to a "Data.Text.Lazy"
 --
@@ -60,11 +59,11 @@ encodeToTextBuilder =
     go (Number s) = {-# SCC "go/Number" #-} fromScientific s
     go (String s) = {-# SCC "go/String" #-} string s
     go (Array v)
-        | V.null v = {-# SCC "go/Array" #-} "[]"
+        | null v = {-# SCC "go/Array" #-} "[]"
         | otherwise = {-# SCC "go/Array" #-}
                       singleton '[' <>
-                      go (V.unsafeHead v) <>
-                      V.foldr f (singleton ']') (V.unsafeTail v)
+                      go (head v) <>
+                      foldr f (singleton ']') (tail v)
       where f a z = singleton ',' <> go a <> z
     go (Object m) = {-# SCC "go/Object" #-}
         case M.toList m of

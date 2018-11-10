@@ -53,7 +53,7 @@ import Data.Time.LocalTime
 import Data.Word (Word8)
 import qualified Data.Map.Strict as M
 import qualified Data.Text as T
-import qualified Data.Vector as V
+import qualified Data.List as L
 
 -- | Encode a JSON value to a "Data.ByteString" 'B.Builder'.
 --
@@ -77,12 +77,12 @@ bool = BP.primBounded (BP.condB id (ascii4 ('t',('r',('u','e'))))
                                    (ascii5 ('f',('a',('l',('s','e'))))))
 
 -- | Encode a JSON array.
-array :: V.Vector Value -> Builder
+array :: [Value] -> Builder
 array v
-  | V.null v  = emptyArray_
+  | L.null v  = emptyArray_
   | otherwise = B.char8 '[' <>
-                encodeToBuilder (V.unsafeHead v) <>
-                V.foldr withComma (B.char8 ']') (V.unsafeTail v)
+                encodeToBuilder (L.head v) <>
+                L.foldr withComma (B.char8 ']') (L.tail v)
   where
     withComma a z = B.char8 ',' <> encodeToBuilder a <> z
 

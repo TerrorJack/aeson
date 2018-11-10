@@ -79,18 +79,17 @@ import Data.Foldable (foldl')
 import Data.Map.Strict (Map)
 import Data.List (intercalate)
 import Data.Scientific (Scientific)
+import qualified Data.List as L
 import Data.Semigroup (Semigroup((<>)))
 import Data.String (IsString(..))
 import Data.Text (Text, pack, unpack)
 import Data.Time (UTCTime)
 import Data.Time.Format (FormatTime)
 import Data.Typeable (Typeable)
-import Data.Vector (Vector)
 import GHC.Generics (Generic)
 import qualified Control.Monad.Fail as Fail
 import qualified Data.Map.Strict as M
 import qualified Data.Scientific as S
-import qualified Data.Vector as V
 import qualified Language.Haskell.TH.Syntax as TH
 
 -- | Elements of a JSON path used to describe the location of an
@@ -325,7 +324,7 @@ apP d e = do
 type Object = Map Text Value
 
 -- | A JSON \"array\" (sequence).
-type Array = Vector Value
+type Array = [Value]
 
 -- | A JSON value represented as a Haskell value.
 data Value = Object !Object
@@ -371,19 +370,18 @@ instance TH.Lift Value where
         e = S.base10Exponent n
     lift (String t) = [| String (pack s) |]
       where s = unpack t
-    lift (Array a) = [| Array (V.fromList a') |]
-      where a' = V.toList a
+    lift (Array a) = [| Array a |]
     lift (Object o) = [| Object (M.fromList . map (first pack) $ o') |]
       where o' = map (first unpack) . M.toList $ o
 
 -- | The empty array.
 emptyArray :: Value
-emptyArray = Array V.empty
+emptyArray = Array mempty
 
 -- | Determines if the 'Value' is an empty 'Array'.
 -- Note that: @isEmptyArray 'emptyArray'@.
 isEmptyArray :: Value -> Bool
-isEmptyArray (Array arr) = V.null arr
+isEmptyArray (Array arr) = L.null arr
 isEmptyArray _ = False
 
 -- | The empty object.

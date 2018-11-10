@@ -40,7 +40,6 @@ import qualified Data.Map.Strict as Map
 import qualified Data.Text as T
 import qualified Data.Text.Lazy as LT
 import qualified Data.UUID.Types as UUID
-import qualified Data.Vector as V
 
 encodeDouble :: Double -> Double -> Property
 encodeDouble num denom
@@ -183,7 +182,7 @@ isString (String _) = True
 isString _          = False
 
 is2ElemArray :: Value -> Bool
-is2ElemArray (Array v) = V.length v == 2 && isString (V.head v)
+is2ElemArray (Array v) = length v == 2 && isString (head v)
 is2ElemArray _         = False
 
 isTaggedObjectValue :: Value -> Bool
