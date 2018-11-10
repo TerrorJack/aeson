@@ -37,7 +37,7 @@ import Control.Applicative ((<|>))
 import Control.Monad (void, when)
 import Data.Aeson.Types.Internal (IResult(..), JSONPath, Result(..), Value(..))
 import Data.Attoparsec.ByteString.Char8 (Parser, char, decimal, endOfInput, isDigit_w8, signed, string)
-import Data.Scientific (Scientific)
+import Data.Scientific (Scientific, toRealFloat)
 import Data.Text (Text)
 import qualified Data.Attoparsec.ByteString as A
 import qualified Data.Attoparsec.Lazy as L
@@ -168,7 +168,7 @@ value = do
     C_t           -> string "true" *> pure (Bool True)
     C_n           -> string "null" *> pure Null
     _              | w >= 48 && w <= 57 || w == 45
-                  -> Number <$> scientific
+                  -> Number . toRealFloat <$> scientific
       | otherwise -> fail "not a valid json value"
 
 -- | Strict version of 'value'. See also 'json''.
@@ -188,7 +188,7 @@ value' = do
     _              | w >= 48 && w <= 57 || w == 45
                   -> do
                      !n <- scientific
-                     return (Number n)
+                     return (Number $ toRealFloat n)
       | otherwise -> fail "not a valid json value"
 
 -- | Parse a quoted JSON string.

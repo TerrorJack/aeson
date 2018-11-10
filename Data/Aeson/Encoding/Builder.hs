@@ -42,7 +42,7 @@ import Data.ByteString.Builder.Prim as BP
 import Data.ByteString.Builder.Scientific (scientificBuilder)
 import Data.Char (chr, ord)
 import Data.Semigroup ((<>))
-import Data.Scientific (Scientific, base10Exponent, coefficient)
+import Data.Scientific (Scientific, base10Exponent, coefficient, fromFloatDigits)
 import Data.Text.Encoding (encodeUtf8BuilderEscaped)
 import Data.Time (UTCTime(..))
 import Data.Time.Calendar (Day(..), toGregorian)
@@ -59,7 +59,7 @@ import qualified Data.List as L
 encodeToBuilder :: Value -> Builder
 encodeToBuilder Null       = null_
 encodeToBuilder (Bool b)   = bool b
-encodeToBuilder (Number n) = scientific n
+encodeToBuilder (Number n) = scientific $ fromFloatDigits n
 encodeToBuilder (String s) = text s
 encodeToBuilder (Array v)  = array v
 encodeToBuilder (Object m) = object m

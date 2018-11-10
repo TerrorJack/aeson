@@ -23,7 +23,6 @@ import Data.Functor.Product (Product(..))
 import Data.Functor.Sum (Sum(..))
 import Data.List.NonEmpty (NonEmpty(..))
 import Data.Proxy (Proxy(..))
-import Data.Scientific (Scientific)
 import Data.Time (fromGregorian)
 import Data.Word (Word8)
 import GHC.Generics (Generic)
@@ -88,7 +87,6 @@ jsonExamples =
 
   , example "Float" "3.14" (3.14 :: Float)
   , example "Pico" "3.14" (3.14 :: Pico)
-  , example "Scientific" "3.14" (3.14 :: Scientific)
 
   , example "Set Int" "[1,2,3]" (Set.fromList [3, 2, 1] :: Set.Set Int)
   , example "IntSet"  "[1,2,3]" (IntSet.fromList [3, 2, 1])

@@ -75,7 +75,6 @@ import Data.Data (Data)
 import Data.Foldable (foldl')
 import Data.Map.Strict (Map)
 import Data.List (intercalate)
-import Data.Scientific (Scientific)
 import qualified Data.List as L
 import Data.Semigroup (Semigroup((<>)))
 import Data.String (IsString(..))
@@ -86,7 +85,6 @@ import Data.Typeable (Typeable)
 import GHC.Generics (Generic)
 import qualified Control.Monad.Fail as Fail
 import qualified Data.Map.Strict as M
-import qualified Data.Scientific as S
 import qualified Language.Haskell.TH.Syntax as TH
 
 -- | Elements of a JSON path used to describe the location of an
@@ -327,7 +325,7 @@ type Array = [Value]
 data Value = Object !Object
            | Array !Array
            | String !Text
-           | Number !Scientific
+           | Number !Double
            | Bool !Bool
            | Null
              deriving (Eq, Read, Show, Typeable, Data, Generic)
@@ -361,10 +359,7 @@ instance IsString Value where
 instance TH.Lift Value where
     lift Null = [| Null |]
     lift (Bool b) = [| Bool b |]
-    lift (Number n) = [| Number (S.scientific c e) |]
-      where
-        c = S.coefficient n
-        e = S.base10Exponent n
+    lift (Number n) = [| Number n |]
     lift (String t) = [| String (pack s) |]
       where s = unpack t
     lift (Array a) = [| Array a |]

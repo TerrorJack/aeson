@@ -19,21 +19,17 @@ import Control.Monad (forM, forM_)
 import Data.Aeson ((.=), (.:), (.:?), (.:!), FromJSON(..), FromJSONKeyFunction(..), FromJSONKey(..), ToJSON1(..), decode, eitherDecode, encode, fromJSON, genericParseJSON, genericToEncoding, genericToJSON, object, withObject, withEmbeddedJSON)
 import Data.Aeson.Internal (JSONPathElement(..), formatError)
 import Data.Aeson.QQ.Simple (aesonQQ)
-import Data.Aeson.Text (encodeToTextBuilder)
 import Data.Aeson.Types (Options(..), Result(Success), ToJSON(..), Value(Null, Object), camelTo, camelTo2, defaultOptions, omitNothingFields, parse)
 import Data.Char (toUpper)
 import Data.Either (isLeft, isRight)
-import Data.Map.Strict (Map)
 import Data.List (sort)
 import Data.Maybe (fromMaybe)
 import Data.Sequence (Seq)
-import Data.Scientific (Scientific, scientific)
 import Data.Text (Text)
 import Data.Time (UTCTime)
 import Data.Time.Format (parseTime, defaultTimeLocale)
 import GHC.Generics (Generic, Generic1)
 import Instances ()
-import Numeric.Natural (Natural)
 import System.Directory (getDirectoryContents)
 import System.FilePath ((</>), takeExtension, takeFileName)
 import Test.Tasty (TestTree, testGroup)
@@ -44,9 +40,7 @@ import qualified Data.ByteString.Base16.Lazy as LBase16
 import qualified Data.ByteString.Lazy.Char8 as L
 import qualified Data.Set as Set
 import qualified Data.Text.Lazy as LT
-import qualified Data.Text.Lazy.Builder as TLB
 import qualified Data.Text.Lazy.Encoding as LT
-import qualified Data.Text.Lazy.Encoding as TLE
 import qualified ErrorMessages
 import qualified SerializationFormatSpec
 
@@ -93,10 +87,6 @@ tests = testGroup "unit" [
   , testCase "withEmbeddedJSON" withEmbeddedJSONTest
   , testCase "SingleFieldCon" singleFieldCon
   , testCase "Ratio with denominator 0" ratioDenominator0
-  , testCase "Big scientific exponent" bigScientificExponent
-  , testCase "Big integer decoding" bigIntegerDecoding
-  , testCase "Big natural decading" bigNaturalDecoding
-  , testCase "Big integer key decoding" bigIntegerKeyDecoding
   , testGroup "QQ.Simple"
     [ testCase "example" $
       assertEqual "" (object ["foo" .= True]) [aesonQQ| {"foo": true } |]
@@ -351,39 +341,8 @@ issue351 = [
 
 ioTests :: IO [TestTree]
 ioTests = do
-  enc <- encoderComparisonTests
   js <- jsonTestSuite
-  return [enc, js]
-
-encoderComparisonTests :: IO TestTree
-encoderComparisonTests = do
-  encoderTests <- forM testFiles $ \file0 -> do
-      let file = "benchmarks/json-data/" ++ file0
-      return $ testCase file $ do
-          inp <- L.readFile file
-          case eitherDecode inp of
-            Left  err -> assertFailure $ "Decoding failure: " ++ err
-            Right val -> assertEqual "" (encode val) (encodeViaText val)
-  return $ testGroup "encoders" encoderTests
- where
-  encodeViaText :: Value -> L.ByteString
-  encodeViaText =
-      TLE.encodeUtf8 . TLB.toLazyText . encodeToTextBuilder . toJSON
-
-  testFiles =
-    [ "example.json"
-    , "integers.json"
-    , "jp100.json"
-    , "numbers.json"
-    , "twitter10.json"
-    , "twitter20.json"
-    , "geometry.json"
-    , "jp10.json"
-    , "jp50.json"
-    , "twitter1.json"
-    , "twitter100.json"
-    , "twitter50.json"
-    ]
+  return [js]
 
 -- A regression test for: https://github.com/bos/aeson/issues/293
 data MyRecord = MyRecord {_field1 :: Maybe Int, _field2 :: Maybe Bool}
@@ -556,36 +515,6 @@ ratioDenominator0 =
   assertEqual "Ratio with denominator 0"
     (Left "Error in $: Ratio denominator was 0")
     (eitherDecode "{ \"numerator\": 1, \"denominator\": 0 }" :: Either String Rational)
-
-bigScientificExponent :: Assertion
-bigScientificExponent =
-  assertEqual "Encoding an integral scientific with a large exponent should normalize it"
-    "1.0e2000"
-    (encode (scientific 1 2000 :: Scientific))
-
-bigIntegerDecoding :: Assertion
-bigIntegerDecoding =
-  assertEqual "Decoding an Integer with a large exponent should fail"
-    (Left "Error in $: expected a number with exponent <= 1024, encountered Number")
-    ((eitherDecode :: L.ByteString -> Either String Integer) "1e2000")
-
-bigNaturalDecoding :: Assertion
-bigNaturalDecoding =
-  assertEqual "Decoding a Natural with a large exponent should fail"
-    (Left "Error in $: expected a number with exponent <= 1024, encountered Number")
-    ((eitherDecode :: L.ByteString -> Either String Integer) "1e2000")
-
-bigIntegerKeyDecoding :: Assertion
-bigIntegerKeyDecoding =
-  assertEqual "Decoding an Integer key with a large exponent should fail"
-    (Left "Error in $['1e2000']: expected a number with exponent <= 1024, encountered Number")
-    ((eitherDecode :: L.ByteString -> Either String (Map Integer Value)) "{ \"1e2000\": null }")
-
-bigNaturalKeyDecoding :: Assertion
-bigNaturalKeyDecoding =
-  assertEqual "Decoding an Integer key with a large exponent should fail"
-    (Left "Error in $['1e2000']: expected a number with exponent <= 1024, encountered Number")
-    ((eitherDecode :: L.ByteString -> Either String (Map Natural Value)) "{ \"1e2000\": null }")
 
 instance ToJSON MyRecord where
   toJSON = genericToJSON defaultOptions{omitNothingFields=True}

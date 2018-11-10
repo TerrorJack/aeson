@@ -139,7 +139,7 @@ parseJSONElemAtIndex :: (Value -> Parser a) -> Int -> [Value] -> Parser a
 parseJSONElemAtIndex p idx ary = p (ary !! idx) <?> Index idx
 
 parseRealFloat :: RealFloat a => String -> Value -> Parser a
-parseRealFloat _        (Number s) = pure $ Scientific.toRealFloat s
+parseRealFloat _        (Number s) = pure $ Scientific.toRealFloat $ Scientific.fromFloatDigits s
 parseRealFloat _        Null       = pure (0/0)
 parseRealFloat expected v          = typeMismatch expected v
 {-# INLINE parseRealFloat #-}
@@ -177,11 +177,7 @@ parseScientificText
 parseIntegralText :: Integral a => String -> Text -> Parser a
 parseIntegralText expected t
     = parseScientificText t
-  >>= rejectLargeExponent
   >>= parseIntegralFromScientific expected
-  where
-    rejectLargeExponent :: Scientific -> Parser Scientific
-    rejectLargeExponent s = withBoundedScientific expected pure (Number s)
 {-# INLINE parseIntegralText #-}
 
 parseBoundedIntegralText :: (Bounded a, Integral a) => String -> Text -> Parser a
@@ -597,7 +593,7 @@ withArray expected _ v           = typeMismatch expected v
 -- size of the exponent (see 'withBoundedScientific') to prevent
 -- malicious input from filling up the memory of the target system.
 withScientific :: String -> (Scientific -> Parser a) -> Value -> Parser a
-withScientific _        f (Number scientific) = f scientific
+withScientific _        f (Number scientific) = f $ Scientific.fromFloatDigits scientific
 withScientific expected _ v                   = typeMismatch expected v
 {-# INLINE withScientific #-}
 
@@ -609,9 +605,9 @@ withScientific expected _ v                   = typeMismatch expected v
 -- 'Scientific' exponent is larger than 1024.
 withBoundedScientific :: String -> (Scientific -> Parser a) -> Value -> Parser a
 withBoundedScientific _ f v@(Number scientific) =
-    if base10Exponent scientific > 1024
+    if base10Exponent (Scientific.fromFloatDigits scientific) > 1024
     then typeMismatch "a number with exponent <= 1024" v
-    else f scientific
+    else f (Scientific.fromFloatDigits scientific)
 withBoundedScientific expected _ v                   = typeMismatch expected v
 {-# INLINE withBoundedScientific #-}
 
@@ -1374,14 +1370,6 @@ instance FromJSON1 NonEmpty where
 
 instance (FromJSON a) => FromJSON (NonEmpty a) where
     parseJSON = parseJSON1
-    {-# INLINE parseJSON #-}
-
--------------------------------------------------------------------------------
--- scientific
--------------------------------------------------------------------------------
-
-instance FromJSON Scientific where
-    parseJSON = withScientific "Scientific" pure
     {-# INLINE parseJSON #-}
 
 -------------------------------------------------------------------------------

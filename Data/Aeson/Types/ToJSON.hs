@@ -72,7 +72,6 @@ import Data.List.NonEmpty (NonEmpty(..))
 import Data.Semigroup ((<>))
 import Data.Proxy (Proxy(..))
 import Data.Ratio (Ratio, denominator, numerator)
-import Data.Scientific (Scientific)
 import Data.Text (Text, pack)
 import Data.Time (Day, DiffTime, LocalTime, NominalDiffTime, TimeOfDay, UTCTime, ZonedTime)
 import Data.Time.Format (FormatTime, formatTime, defaultTimeLocale)
@@ -109,7 +108,7 @@ toJSONPair a b = liftToJSON2 a (listValue a) b (listValue b)
 realFloatToJSON :: RealFloat a => a -> Value
 realFloatToJSON d
     | isNaN d || isInfinite d = Null
-    | otherwise = Number $ Scientific.fromFloatDigits d
+    | otherwise = Number $ Scientific.toRealFloat $ Scientific.fromFloatDigits d
 {-# INLINE realFloatToJSON #-}
 
 -------------------------------------------------------------------------------
@@ -1501,20 +1500,6 @@ instance (ToJSON a) => ToJSON (NonEmpty a) where
 
     toEncoding = toEncoding1
     {-# INLINE toEncoding #-}
-
--------------------------------------------------------------------------------
--- scientific
--------------------------------------------------------------------------------
-
-instance ToJSON Scientific where
-    toJSON = Number
-    {-# INLINE toJSON #-}
-
-    toEncoding = E.scientific
-    {-# INLINE toEncoding #-}
-
-instance ToJSONKey Scientific where
-    toJSONKey = toJSONKeyTextEnc E.scientificText
 
 -------------------------------------------------------------------------------
 -- transformers - Functors
