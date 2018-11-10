@@ -1,4 +1,3 @@
-{-# LANGUAGE NoImplicitPrelude #-}
 {-# LANGUAGE OverloadedStrings #-}
 
 {-# OPTIONS_GHC -fno-warn-deprecations #-}
@@ -7,8 +6,6 @@ module UnitTests.NullaryConstructors
     (
       nullaryConstructors
     ) where
-
-import Prelude.Compat
 
 import Data.Aeson (decode, eitherDecode, fromEncoding, Value)
 import Data.Aeson.Internal (IResult (..), iparse)

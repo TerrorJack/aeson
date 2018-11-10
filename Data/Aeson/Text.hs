@@ -1,5 +1,4 @@
 {-# LANGUAGE BangPatterns #-}
-{-# LANGUAGE NoImplicitPrelude #-}
 {-# LANGUAGE OverloadedStrings #-}
 -- |
 -- Module:      Data.Aeson.Text
@@ -21,8 +20,6 @@ module Data.Aeson.Text
       encodeToLazyText
     , encodeToTextBuilder
     ) where
-
-import Prelude.Compat
 
 import Data.Aeson.Types (Value(..), ToJSON(..))
 import Data.Aeson.Encoding (encodingToLazyByteString)

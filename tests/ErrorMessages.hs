@@ -1,4 +1,3 @@
-{-# LANGUAGE NoImplicitPrelude #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 
@@ -6,8 +5,6 @@ module ErrorMessages
   (
     tests
   ) where
-
-import Prelude.Compat
 
 import Data.Aeson (FromJSON(..), eitherDecode)
 import Data.Proxy (Proxy(..))

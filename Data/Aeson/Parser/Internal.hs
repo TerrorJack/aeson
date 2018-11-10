@@ -1,7 +1,6 @@
 {-# LANGUAGE BangPatterns #-}
 {-# LANGUAGE CPP #-}
 {-# LANGUAGE MagicHash #-}
-{-# LANGUAGE NoImplicitPrelude #-}
 {-# LANGUAGE OverloadedStrings #-}
 
 -- |
@@ -33,8 +32,6 @@ module Data.Aeson.Parser.Internal
     , eitherDecodeWith
     , eitherDecodeStrictWith
     ) where
-
-import Prelude.Compat
 
 import Control.Applicative ((<|>))
 import Control.Monad (void, when)

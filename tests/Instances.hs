@@ -1,14 +1,11 @@
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE FlexibleInstances #-}
-{-# LANGUAGE NoImplicitPrelude #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards #-}
 
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 
 module Instances () where
-
-import Prelude.Compat
 
 import Control.Applicative (empty)
 import Control.Monad
@@ -22,7 +19,6 @@ import Types
 import qualified Data.DList as DList
 import qualified Data.Map.Strict as M
 
-import Data.Orphans ()
 import Test.QuickCheck.Instances ()
 
 -- "System" types.

@@ -1,6 +1,5 @@
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
-{-# LANGUAGE NoImplicitPrelude #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE QuasiQuotes #-}
@@ -16,8 +15,6 @@ module UnitTests
     , withEmbeddedJSONTest
     ) where
 
-import Prelude.Compat
-
 import Control.Monad (forM, forM_)
 import Data.Aeson ((.=), (.:), (.:?), (.:!), FromJSON(..), FromJSONKeyFunction(..), FromJSONKey(..), ToJSON1(..), decode, eitherDecode, encode, fromJSON, genericParseJSON, genericToEncoding, genericToJSON, object, withObject, withEmbeddedJSON)
 import Data.Aeson.Internal (JSONPathElement(..), formatError)
@@ -25,7 +22,7 @@ import Data.Aeson.QQ.Simple (aesonQQ)
 import Data.Aeson.Text (encodeToTextBuilder)
 import Data.Aeson.Types (Options(..), Result(Success), ToJSON(..), Value(Null, Object), camelTo, camelTo2, defaultOptions, omitNothingFields, parse)
 import Data.Char (toUpper)
-import Data.Either.Compat (isLeft, isRight)
+import Data.Either (isLeft, isRight)
 import Data.Map.Strict (Map)
 import Data.List (sort)
 import Data.Maybe (fromMaybe)

@@ -3,13 +3,10 @@
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE GADTs #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
-{-# LANGUAGE NoImplicitPrelude #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE StandaloneDeriving #-}
 
 module Types (module Types) where
-
-import Prelude.Compat
 
 import Math.NumberTheory.Logarithms (intLog2)
 import Control.Applicative ((<$>))

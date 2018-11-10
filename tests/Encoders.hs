@@ -1,9 +1,6 @@
 {-# LANGUAGE GADTs #-}
-{-# LANGUAGE NoImplicitPrelude #-}
 
 module Encoders (module Encoders) where
-
-import Prelude.Compat
 
 import Data.Aeson.Types
 import Options

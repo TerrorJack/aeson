@@ -1,6 +1,5 @@
 {-# LANGUAGE DeriveDataTypeable #-}
 {-# LANGUAGE EmptyDataDecls #-}
-{-# LANGUAGE NoImplicitPrelude #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RankNTypes #-}
 
@@ -56,8 +55,6 @@ module Data.Aeson.Encoding.Internal
     -- ** JSON tokens
     , comma, colon, openBracket, closeBracket, openCurly, closeCurly
     ) where
-
-import Prelude.Compat
 
 import Data.Aeson.Types.Internal (Value)
 import Data.ByteString.Builder (Builder, char7, toLazyByteString)

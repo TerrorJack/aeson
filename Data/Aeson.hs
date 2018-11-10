@@ -1,4 +1,3 @@
-{-# LANGUAGE NoImplicitPrelude #-}
 -- |
 -- Module:      Data.Aeson
 -- Copyright:   (c) 2011-2016 Bryan O'Sullivan
@@ -130,8 +129,6 @@ module Data.Aeson
     , json
     , json'
     ) where
-
-import Prelude.Compat
 
 import Data.Aeson.Types.FromJSON (ifromJSON)
 import Data.Aeson.Encoding (encodingToLazyByteString)

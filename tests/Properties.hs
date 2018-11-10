@@ -1,12 +1,9 @@
 {-# LANGUAGE FlexibleContexts #-} -- For arbitrary Compose
-{-# LANGUAGE NoImplicitPrelude #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 
 module Properties (module Properties) where
-
-import Prelude.Compat
 
 import Control.Applicative (Const)
 import Data.Aeson (eitherDecode, encode)

@@ -1,8 +1,4 @@
-{-# LANGUAGE NoImplicitPrelude #-}
-
 module Options (module Options) where
-
-import Prelude.Compat
 
 import Data.Aeson.Types
 import Data.Char

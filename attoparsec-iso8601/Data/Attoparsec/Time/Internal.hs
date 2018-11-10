@@ -1,4 +1,3 @@
-{-# LANGUAGE NoImplicitPrelude #-}
 -- |
 -- Module:      Data.Aeson.Internal.Time
 -- Copyright:   (c) 2015-2016 Bryan O'Sullivan
@@ -15,8 +14,6 @@ module Data.Attoparsec.Time.Internal
     , diffTimeOfDay64
     , toTimeOfDay64
     ) where
-
-import Prelude.Compat
 
 import Data.Int (Int64)
 import Data.Time

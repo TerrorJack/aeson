@@ -5,7 +5,6 @@
 {-# LANGUAGE GADTs #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE NamedFieldPuns #-}
-{-# LANGUAGE NoImplicitPrelude #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE PolyKinds #-}
 {-# LANGUAGE RecordWildCards #-}
@@ -69,8 +68,6 @@ module Data.Aeson.Types.FromJSON
     -- * Internal
     , parseOptionalFieldWith
     ) where
-
-import Prelude.Compat
 
 import Control.Applicative ((<|>), Const(..))
 import Control.Monad ((<=<), zipWithM)

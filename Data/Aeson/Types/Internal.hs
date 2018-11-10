@@ -1,7 +1,6 @@
 {-# LANGUAGE DeriveDataTypeable #-}
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
-{-# LANGUAGE NoImplicitPrelude #-}
 {-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE TemplateHaskellQuotes #-}
 
@@ -66,8 +65,6 @@ module Data.Aeson.Types.Internal
     -- * Other types
     , DotNetTime(..)
     ) where
-
-import Prelude.Compat
 
 import Control.Applicative (Alternative(..))
 import Control.Arrow (first)

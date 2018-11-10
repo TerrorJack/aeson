@@ -4,7 +4,6 @@
 {-# LANGUAGE FunctionalDependencies #-}
 {-# LANGUAGE KindSignatures #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
-{-# LANGUAGE NoImplicitPrelude #-}
 {-# LANGUAGE PolyKinds #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TypeOperators #-}
@@ -35,8 +34,6 @@ module Data.Aeson.Types.Generic
     , One
     , ProductSize(..)
     ) where
-
-import Prelude.Compat
 
 import GHC.Generics
 

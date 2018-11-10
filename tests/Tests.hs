@@ -1,8 +1,4 @@
-{-# LANGUAGE NoImplicitPrelude #-}
-
 module Main (main) where
-
-import Prelude.Compat
 
 import Test.Tasty (defaultMain, testGroup)
 import qualified Properties

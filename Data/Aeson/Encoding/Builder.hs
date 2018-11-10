@@ -1,5 +1,4 @@
 {-# LANGUAGE BangPatterns #-}
-{-# LANGUAGE NoImplicitPrelude #-}
 {-# LANGUAGE TupleSections #-}
 -- |
 -- Module:      Data.Aeson.Encoding.Builder
@@ -35,8 +34,6 @@ module Data.Aeson.Encoding.Builder
     , ascii4
     , ascii5
     ) where
-
-import Prelude.Compat
 
 import Data.Aeson.Internal.Time
 import Data.Aeson.Types.Internal (Value (..))

@@ -1,7 +1,6 @@
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE GADTs #-}
-{-# LANGUAGE NoImplicitPrelude #-}
 {-# LANGUAGE OverloadedStrings #-}
 
 ------------------------------------------------------------------------------
@@ -12,8 +11,6 @@ module SerializationFormatSpec
   (
     tests
   ) where
-
-import Prelude.Compat
 
 import Control.Applicative (Const(..))
 import Data.Aeson (FromJSON(..), decode, encode, genericParseJSON, genericToEncoding, genericToJSON)

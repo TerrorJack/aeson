@@ -1,5 +1,4 @@
 {-# LANGUAGE BangPatterns #-}
-{-# LANGUAGE NoImplicitPrelude #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 -- |
 -- Module:      Data.Aeson.Parser.Time
@@ -20,8 +19,6 @@ module Data.Attoparsec.Time
     , utcTime
     , zonedTime
     ) where
-
-import Prelude.Compat
 
 import Control.Applicative ((<|>))
 import Control.Monad (void, when)

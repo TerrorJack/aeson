@@ -6,7 +6,6 @@
 {-# LANGUAGE GADTs #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE NamedFieldPuns #-}
-{-# LANGUAGE NoImplicitPrelude #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE PatternGuards #-}
 {-# LANGUAGE PolyKinds #-}
@@ -51,8 +50,6 @@ module Data.Aeson.Types.ToJSON
     , listEncoding
     , listValue
     ) where
-
-import Prelude.Compat
 
 import Control.Applicative (Const(..))
 import Data.Aeson.Encoding (Encoding, Encoding', Series, dict, emptyArray_)
