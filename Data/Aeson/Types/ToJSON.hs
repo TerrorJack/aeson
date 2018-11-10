@@ -106,13 +106,6 @@ import qualified Data.Text.Encoding as T
 import qualified Data.Text.Lazy as LT
 import qualified Data.Tree as Tree
 
-import qualified GHC.Exts as Exts
-import qualified Data.Primitive.Array as PM
-import qualified Data.Primitive.SmallArray as PM
-import qualified Data.Primitive.Types as PM
-import qualified Data.Primitive.UnliftedArray as PM
-import qualified Data.Primitive.PrimArray as PM
-
 {-# ANN module ("HLint: ignore Reduce duplication"::String) #-}
 
 toJSONPair :: (a -> Value) -> (b -> Value) -> (a, b) -> Value
@@ -1790,26 +1783,6 @@ dotNetTime (DotNetTime t) = secs ++ formatMillis t ++ ")/"
 
 formatMillis :: (FormatTime t) => t -> String
 formatMillis = take 3 . formatTime defaultTimeLocale "%q"
-
--------------------------------------------------------------------------------
--- primitive
--------------------------------------------------------------------------------
-
-instance ToJSON a => ToJSON (PM.Array a) where
-  toJSON = toJSON . Exts.toList
-  toEncoding = toEncoding . Exts.toList
-
-instance ToJSON a => ToJSON (PM.SmallArray a) where
-  toJSON = toJSON . Exts.toList
-  toEncoding = toEncoding . Exts.toList
-
-instance (PM.Prim a,ToJSON a) => ToJSON (PM.PrimArray a) where
-  toJSON = toJSON . Exts.toList
-  toEncoding = toEncoding . Exts.toList
-
-instance (PM.PrimUnlifted a,ToJSON a) => ToJSON (PM.UnliftedArray a) where
-  toJSON = toJSON . Exts.toList
-  toEncoding = toEncoding . Exts.toList
 
 -------------------------------------------------------------------------------
 -- time

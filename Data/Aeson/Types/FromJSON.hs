@@ -120,13 +120,6 @@ import qualified Data.Text.Encoding as T
 import qualified Data.Text.Lazy as LT
 import qualified Data.Tree as Tree
 
-import qualified GHC.Exts as Exts
-import qualified Data.Primitive.Array as PM
-import qualified Data.Primitive.SmallArray as PM
-import qualified Data.Primitive.Types as PM
-import qualified Data.Primitive.UnliftedArray as PM
-import qualified Data.Primitive.PrimArray as PM
-
 import Data.Coerce (Coercible, coerce)
 coerce' :: Coercible a b => a -> b
 coerce' = coerce
@@ -1569,22 +1562,6 @@ instance FromJSON DotNetTime where
              Just d -> pure (DotNetTime d)
              _      -> fail "could not parse .NET time"
     {-# INLINE parseJSON #-}
-
--------------------------------------------------------------------------------
--- primitive
--------------------------------------------------------------------------------
-
-instance FromJSON a => FromJSON (PM.Array a) where
-  parseJSON = fmap Exts.fromList . parseJSON
-
-instance FromJSON a => FromJSON (PM.SmallArray a) where
-  parseJSON = fmap Exts.fromList . parseJSON
-
-instance (PM.Prim a,FromJSON a) => FromJSON (PM.PrimArray a) where
-  parseJSON = fmap Exts.fromList . parseJSON
-
-instance (PM.PrimUnlifted a,FromJSON a) => FromJSON (PM.UnliftedArray a) where
-  parseJSON = fmap Exts.fromList . parseJSON
 
 -------------------------------------------------------------------------------
 -- time
