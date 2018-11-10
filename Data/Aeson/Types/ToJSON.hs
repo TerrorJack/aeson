@@ -1,4 +1,3 @@
-{-# LANGUAGE CPP #-}
 {-# LANGUAGE DefaultSignatures #-}
 {-# LANGUAGE EmptyDataDecls #-}
 {-# LANGUAGE FlexibleContexts #-}
@@ -10,18 +9,12 @@
 {-# LANGUAGE NoImplicitPrelude #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE PatternGuards #-}
+{-# LANGUAGE PolyKinds #-}
 {-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TypeOperators #-}
 {-# LANGUAGE TypeSynonymInstances #-}
 {-# LANGUAGE UndecidableInstances #-}
-
-#if __GLASGOW_HASKELL__ >= 706
-{-# LANGUAGE PolyKinds #-}
-#endif
-
-#include "overlapping-compat.h"
-#include "incoherent-compat.h"
 
 -- TODO: Drop this when we remove support for Data.Attoparsec.Number
 {-# OPTIONS_GHC -fno-warn-deprecations #-}
@@ -133,19 +126,8 @@ import qualified GHC.Exts as Exts
 import qualified Data.Primitive.Array as PM
 import qualified Data.Primitive.SmallArray as PM
 import qualified Data.Primitive.Types as PM
-
-#if MIN_VERSION_primitive(0,6,4)
 import qualified Data.Primitive.UnliftedArray as PM
 import qualified Data.Primitive.PrimArray as PM
-#endif
-
-#if !(MIN_VERSION_bytestring(0,10,0))
-import Foreign.ForeignPtr (withForeignPtr)
-import Foreign.Marshal.Utils (copyBytes)
-import Foreign.Ptr (plusPtr)
-import qualified Data.ByteString.Internal as S
-import qualified Data.ByteString.Lazy.Internal as L
-#endif
 
 {-# ANN module ("HLint: ignore Reduce duplication"::String) #-}
 
@@ -676,7 +658,7 @@ instance (ToJSON a) => ToJSON [a] where
 -- Generic toJSON / toEncoding
 -------------------------------------------------------------------------------
 
-instance OVERLAPPABLE_ (GToJSON enc arity a) => GToJSON enc arity (M1 i c a) where
+instance {-# OVERLAPPABLE #-} (GToJSON enc arity a) => GToJSON enc arity (M1 i c a) where
     -- Meta-information, which is not handled elsewhere, is ignored:
     gToJSON opts targs = gToJSON opts targs . unM1
     {-# INLINE gToJSON #-}
@@ -923,7 +905,7 @@ instance ( GToJSON enc arity f
     taggedObject' opts targs contentsFieldName =
         Tagged . (contentsFieldName `pair`) . gToJSON opts targs
 
-instance OVERLAPPING_ Monoid pairs => TaggedObject' enc pairs arity U1 False where
+instance {-# OVERLAPPING #-} Monoid pairs => TaggedObject' enc pairs arity U1 False where
     taggedObject' _ _ _ _ = Tagged mempty
 
 instance ( RecordToPairs enc pairs arity f
@@ -1010,7 +992,7 @@ instance ( IsRecord                f isRecord
       . consToJSON' opts targs
     {-# INLINE consToJSON #-}
 
-instance OVERLAPPING_
+instance {-# OVERLAPPING #-}
          ( RecordToPairs enc pairs arity (S1 s f)
          , FromPairs enc pairs
          , GToJSON enc arity f
@@ -1061,7 +1043,7 @@ instance ( Selector s
     recordToPairs = fieldToPair
     {-# INLINE recordToPairs #-}
 
-instance INCOHERENT_
+instance {-# INCOHERENT #-}
     ( Selector s
     , GToJSON enc arity (K1 i (Maybe a))
     , KeyValuePair enc pairs
@@ -1073,7 +1055,7 @@ instance INCOHERENT_
     recordToPairs opts targs m1 = fieldToPair opts targs m1
     {-# INLINE recordToPairs #-}
 
-instance INCOHERENT_
+instance {-# INCOHERENT #-}
     ( Selector s
     , GToJSON enc arity (K1 i (Maybe a))
     , KeyValuePair enc pairs
@@ -1120,7 +1102,7 @@ instance ( WriteProduct arity a
           ixR  = ix  + lenL
     {-# INLINE writeProduct #-}
 
-instance OVERLAPPABLE_ (GToJSON Value arity a) => WriteProduct arity a where
+instance {-# OVERLAPPABLE #-} (GToJSON Value arity a) => WriteProduct arity a where
     writeProduct opts targs mv ix _ =
       VM.unsafeWrite mv ix . gToJSON opts targs
     {-# INLINE writeProduct #-}
@@ -1143,7 +1125,7 @@ instance ( EncodeProduct    arity a
       encodeProduct opts targs b
     {-# INLINE encodeProduct #-}
 
-instance OVERLAPPABLE_ (GToJSON Encoding arity a) => EncodeProduct arity a where
+instance {-# OVERLAPPABLE #-} (GToJSON Encoding arity a) => EncodeProduct arity a where
     encodeProduct opts targs a = E.retagEncoding $ gToJSON opts targs a
     {-# INLINE encodeProduct #-}
 
@@ -1164,13 +1146,13 @@ instance ( GToJSON    enc arity a
 
 --------------------------------------------------------------------------------
 
-instance OVERLAPPABLE_
+instance {-# OVERLAPPABLE #-}
     ( ConsToJSON enc arity a
     ) => SumToJSON' UntaggedValue enc arity (C1 c a)
   where
     sumToJSON' opts targs = Tagged . gToJSON opts targs
 
-instance OVERLAPPING_
+instance {-# OVERLAPPING #-}
     ( Constructor c
     , FromString enc
     ) => SumToJSON' UntaggedValue enc arity (C1 c U1)
@@ -1943,7 +1925,6 @@ formatMillis = take 3 . formatTime defaultTimeLocale "%q"
 -- primitive
 -------------------------------------------------------------------------------
 
-#if MIN_VERSION_base(4,7,0)
 instance ToJSON a => ToJSON (PM.Array a) where
   -- note: we could do better than this if vector exposed the data
   -- constructor in Data.Vector.
@@ -1954,7 +1935,6 @@ instance ToJSON a => ToJSON (PM.SmallArray a) where
   toJSON = toJSON . Exts.toList
   toEncoding = toEncoding . Exts.toList
 
-#if (MIN_VERSION_primitive(0,6,4))
 instance (PM.Prim a,ToJSON a) => ToJSON (PM.PrimArray a) where
   toJSON = toJSON . Exts.toList
   toEncoding = toEncoding . Exts.toList
@@ -1962,8 +1942,6 @@ instance (PM.Prim a,ToJSON a) => ToJSON (PM.PrimArray a) where
 instance (PM.PrimUnlifted a,ToJSON a) => ToJSON (PM.UnliftedArray a) where
   toJSON = toJSON . Exts.toList
   toEncoding = toEncoding . Exts.toList
-#endif
-#endif
 
 -------------------------------------------------------------------------------
 -- time
@@ -2782,24 +2760,7 @@ instance (ToJSON a, ToJSON b, ToJSON c, ToJSON d, ToJSON e, ToJSON f, ToJSON g, 
 
 {-# INLINE lazyToStrictByteString #-}
 lazyToStrictByteString :: L.ByteString -> S.ByteString
-#if MIN_VERSION_bytestring(0,10,0)
 lazyToStrictByteString = L.toStrict
-#else
-lazyToStrictByteString = packChunks
-
--- packChunks is taken from the blaze-builder package.
-
--- | Pack the chunks of a lazy bytestring into a single strict bytestring.
-packChunks :: L.ByteString -> S.ByteString
-packChunks lbs =
-    S.unsafeCreate (fromIntegral $ L.length lbs) (copyChunks lbs)
-  where
-    copyChunks L.Empty                         _pf = return ()
-    copyChunks (L.Chunk (S.PS fpbuf o l) lbs') pf  = do
-        withForeignPtr fpbuf $ \pbuf ->
-            copyBytes pf (pbuf `plusPtr` o) l
-        copyChunks lbs' (pf `plusPtr` l)
-#endif
 
 --------------------------------------------------------------------------------
 

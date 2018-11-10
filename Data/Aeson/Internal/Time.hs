@@ -1,5 +1,3 @@
-{-# LANGUAGE CPP #-}
-
 -- |
 -- Module:      Data.Aeson.Internal.Time
 -- Copyright:   (c) 2015-2016 Bryan O'Sullivan

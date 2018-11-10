@@ -1,17 +1,9 @@
-{-# LANGUAGE CPP #-}
 {-# LANGUAGE DeriveDataTypeable #-}
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE NoImplicitPrelude #-}
-{-# LANGUAGE Rank2Types #-}
-#if __GLASGOW_HASKELL__ >= 800
--- a) THQ works on cross-compilers and unregisterised GHCs
--- b) may make compilation faster as no dynamic loading is ever needed (not sure about this)
--- c) removes one hindrance to have code inferred as SafeHaskell safe
+{-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE TemplateHaskellQuotes #-}
-#else
-{-# LANGUAGE TemplateHaskell #-}
-#endif
 
 -- |
 -- Module:      Data.Aeson.Types.Internal
@@ -101,10 +93,6 @@ import qualified Data.HashMap.Strict as H
 import qualified Data.Scientific as S
 import qualified Data.Vector as V
 import qualified Language.Haskell.TH.Syntax as TH
-
-#if !MIN_VERSION_unordered_containers(0,2,6)
-import Data.List (sort)
-#endif
 
 -- | Elements of a JSON path used to describe the location of an
 -- error.
@@ -375,14 +363,7 @@ instance IsString Value where
     {-# INLINE fromString #-}
 
 hashValue :: Int -> Value -> Int
-#if MIN_VERSION_unordered_containers(0,2,6)
 hashValue s (Object o)   = s `hashWithSalt` (0::Int) `hashWithSalt` o
-#else
-hashValue s (Object o)   = foldl' hashWithSalt
-                              (s `hashWithSalt` (0::Int)) assocHashesSorted
-  where
-    assocHashesSorted = sort [hash k `hashWithSalt` v | (k, v) <- H.toList o]
-#endif
 hashValue s (Array a)    = foldl' hashWithSalt
                               (s `hashWithSalt` (1::Int)) a
 hashValue s (String str) = s `hashWithSalt` (2::Int) `hashWithSalt` str

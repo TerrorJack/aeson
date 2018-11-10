@@ -1,4 +1,3 @@
-{-# LANGUAGE CPP #-}
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE DefaultSignatures #-}
 {-# LANGUAGE FlexibleContexts #-}
@@ -8,19 +7,13 @@
 {-# LANGUAGE NamedFieldPuns #-}
 {-# LANGUAGE NoImplicitPrelude #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE PolyKinds #-}
 {-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TypeOperators #-}
 {-# LANGUAGE TypeSynonymInstances #-}
 {-# LANGUAGE UndecidableInstances #-}
 {-# LANGUAGE ViewPatterns #-}
-
-#if __GLASGOW_HASKELL__ >= 706
-{-# LANGUAGE PolyKinds #-}
-#endif
-
-#include "incoherent-compat.h"
-#include "overlapping-compat.h"
 
 -- TODO: Drop this when we remove support for Data.Attoparsec.Number
 {-# OPTIONS_GHC -fno-warn-deprecations #-}
@@ -144,24 +137,12 @@ import qualified GHC.Exts as Exts
 import qualified Data.Primitive.Array as PM
 import qualified Data.Primitive.SmallArray as PM
 import qualified Data.Primitive.Types as PM
-
-#if MIN_VERSION_primitive(0,6,4)
 import qualified Data.Primitive.UnliftedArray as PM
 import qualified Data.Primitive.PrimArray as PM
-#endif
 
-#ifndef HAS_COERCIBLE
-#define HAS_COERCIBLE (__GLASGOW_HASKELL__ >= 707)
-#endif
-
-#if HAS_COERCIBLE
 import Data.Coerce (Coercible, coerce)
 coerce' :: Coercible a b => a -> b
 coerce' = coerce
-#else
-coerce' :: a -> b
-coerce' = unsafeCoerce
-#endif
 
 parseIndexedJSON :: (Value -> Parser a) -> Int -> Value -> Parser a
 parseIndexedJSON p idx value = p value <?> Index idx
@@ -414,11 +395,7 @@ class FromJSONKey a where
 -- At the moment this type is intentionally not exported. 'FromJSONKeyFunction'
 -- can be inspected, but cannot be constructed.
 data CoerceText a where
-#if HAS_COERCIBLE
     CoerceText :: Coercible Text a => CoerceText a
-#else
-    CoerceText :: CoerceText a
-#endif
 
 -- | This type is related to 'ToJSONKeyFunction'. If 'FromJSONKeyValue' is used in the
 --   'FromJSONKey' instance, then 'ToJSONKeyValue' should be used in the 'ToJSONKey'
@@ -452,9 +429,7 @@ instance Functor FromJSONKeyFunction where
 --
 -- On pre GHC 7.8 this is unconstrainted function.
 fromJSONKeyCoerce ::
-#if HAS_COERCIBLE
     Coercible Text a =>
-#endif
     FromJSONKeyFunction a
 fromJSONKeyCoerce = FromJSONKeyCoerce CoerceText
 
@@ -462,29 +437,18 @@ fromJSONKeyCoerce = FromJSONKeyCoerce CoerceText
 --
 -- See note on 'fromJSONKeyCoerce'.
 coerceFromJSONKeyFunction ::
-#if HAS_COERCIBLE
     Coercible a b =>
-#endif
     FromJSONKeyFunction a -> FromJSONKeyFunction b
-#if HAS_COERCIBLE
 coerceFromJSONKeyFunction = coerce
-#else
-coerceFromJSONKeyFunction (FromJSONKeyCoerce CoerceText) = FromJSONKeyCoerce CoerceText
-coerceFromJSONKeyFunction (FromJSONKeyText f)            = FromJSONKeyText (coerce' . f)
-coerceFromJSONKeyFunction (FromJSONKeyTextParser f)      = FromJSONKeyTextParser (fmap coerce' . f)
-coerceFromJSONKeyFunction (FromJSONKeyValue f)           = FromJSONKeyValue (fmap coerce' . f)
-#endif
 
 {-# RULES
   "FromJSONKeyCoerce: fmap id"     forall (x :: FromJSONKeyFunction a).
                                    fmap id x = x
   #-}
-#if HAS_COERCIBLE
 {-# RULES
   "FromJSONKeyCoerce: fmap coerce" forall x .
                                    fmap coerce x = coerceFromJSONKeyFunction x
   #-}
-#endif
 
 -- | Same as 'fmap'. Provided for the consistency with 'ToJSONKeyFunction'.
 mapFromJSONKeyFunction :: (a -> b) -> FromJSONKeyFunction a -> FromJSONKeyFunction b
@@ -802,7 +766,7 @@ instance GFromJSON arity V1 where
     gParseJSON _ _ _ = fail "Attempted to parse empty type"
 
 
-instance OVERLAPPABLE_ (GFromJSON arity a) => GFromJSON arity (M1 i c a) where
+instance {-# OVERLAPPABLE #-} (GFromJSON arity a) => GFromJSON arity (M1 i c a) where
     -- Meta-information, which is not handled elsewhere, is just added to the
     -- parsed value:
     gParseJSON opts fargs = fmap M1 . gParseJSON opts fargs
@@ -1004,7 +968,7 @@ instance (GFromJSON arity f) => FromTaggedObject'' arity f False where
     parseFromTaggedObject'' opts fargs contentsFieldName = Tagged .
       (gParseJSON opts fargs <=< (.: pack contentsFieldName))
 
-instance OVERLAPPING_ FromTaggedObject'' arity U1 False where
+instance {-# OVERLAPPING #-} FromTaggedObject'' arity U1 False where
     parseFromTaggedObject'' _ _ _ _ = Tagged (pure U1)
 
 --------------------------------------------------------------------------------
@@ -1024,7 +988,7 @@ instance ( IsRecord            f isRecord
       (unTagged :: Tagged isRecord (Parser (f a)) -> Parser (f a))
         . consParseJSON' opts fargs
 
-instance OVERLAPPING_
+instance {-# OVERLAPPING #-}
          ( GFromJSON arity a, FromRecord arity (S1 s a)
          ) => ConsFromJSON' arity (S1 s a) True where
     consParseJSON' opts fargs
@@ -1051,14 +1015,14 @@ instance ( FromRecord arity a
       (:*:) <$> parseRecord opts fargs obj
             <*> parseRecord opts fargs obj
 
-instance OVERLAPPABLE_ (Selector s, GFromJSON arity a) =>
+instance {-# OVERLAPPABLE #-} (Selector s, GFromJSON arity a) =>
   FromRecord arity (S1 s a) where
     parseRecord opts fargs =
       (<?> Key label) . gParseJSON opts fargs <=< (.: label)
         where
           label = pack . fieldLabelModifier opts $ selName (undefined :: t s a p)
 
-instance INCOHERENT_ (Selector s, FromJSON a) =>
+instance {-# INCOHERENT #-} (Selector s, FromJSON a) =>
   FromRecord arity (S1 s (K1 i (Maybe a))) where
     parseRecord opts _ obj = M1 . K1 <$> obj .:? pack label
         where
@@ -1066,7 +1030,7 @@ instance INCOHERENT_ (Selector s, FromJSON a) =>
                     selName (undefined :: t s (K1 i (Maybe a)) p)
 
 -- Parse an Option like a Maybe.
-instance INCOHERENT_ (Selector s, FromJSON a) =>
+instance {-# INCOHERENT #-} (Selector s, FromJSON a) =>
   FromRecord arity (S1 s (K1 i (Semigroup.Option a))) where
     parseRecord opts fargs obj = wrap <$> parseRecord opts fargs obj
       where
@@ -1133,14 +1097,14 @@ instance
         L1 <$> parseUntaggedValue opts fargs value <|>
         R1 <$> parseUntaggedValue opts fargs value
 
-instance OVERLAPPABLE_
+instance {-# OVERLAPPABLE #-}
     ( GFromJSON            arity a
     , ConsFromJSON         arity a
     ) => FromUntaggedValue arity (C1 c a)
   where
     parseUntaggedValue = gParseJSON
 
-instance OVERLAPPING_
+instance {-# OVERLAPPING #-}
     ( Constructor c )
     => FromUntaggedValue arity (C1 c U1)
   where
@@ -1695,7 +1659,6 @@ instance FromJSON DotNetTime where
 -- primitive
 -------------------------------------------------------------------------------
 
-#if MIN_VERSION_base(4,7,0)
 instance FromJSON a => FromJSON (PM.Array a) where
   -- note: we could do better than this if vector exposed the data
   -- constructor in Data.Vector.
@@ -1704,14 +1667,11 @@ instance FromJSON a => FromJSON (PM.Array a) where
 instance FromJSON a => FromJSON (PM.SmallArray a) where
   parseJSON = fmap Exts.fromList . parseJSON
 
-#if MIN_VERSION_primitive(0,6,4)
 instance (PM.Prim a,FromJSON a) => FromJSON (PM.PrimArray a) where
   parseJSON = fmap Exts.fromList . parseJSON
 
 instance (PM.PrimUnlifted a,FromJSON a) => FromJSON (PM.UnliftedArray a) where
   parseJSON = fmap Exts.fromList . parseJSON
-#endif
-#endif
 
 -------------------------------------------------------------------------------
 -- time

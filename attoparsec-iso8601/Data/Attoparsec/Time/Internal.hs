@@ -1,4 +1,3 @@
-{-# LANGUAGE CPP #-}
 {-# LANGUAGE NoImplicitPrelude #-}
 -- |
 -- Module:      Data.Aeson.Internal.Time
@@ -21,48 +20,14 @@ import Prelude.Compat
 
 import Data.Int (Int64)
 import Data.Time
-import Unsafe.Coerce (unsafeCoerce)
-
-#if MIN_VERSION_time(1,6,0)
-
 import Data.Time.Clock (diffTimeToPicoseconds)
-
-#endif
-
-#if MIN_VERSION_base(4,7,0)
-
 import Data.Fixed (Pico, Fixed(MkFixed))
-
-#else
-
-import Data.Fixed (Pico)
-
-#endif
-
-#if !MIN_VERSION_time(1,6,0)
-
-diffTimeToPicoseconds :: DiffTime -> Integer
-diffTimeToPicoseconds = unsafeCoerce
-
-#endif
-
-#if MIN_VERSION_base(4,7,0)
 
 toPico :: Integer -> Pico
 toPico = MkFixed
 
 fromPico :: Pico -> Integer
 fromPico (MkFixed i) = i
-
-#else
-
-toPico :: Integer -> Pico
-toPico = unsafeCoerce
-
-fromPico :: Pico -> Integer
-fromPico = unsafeCoerce
-
-#endif
 
 -- | Like TimeOfDay, but using a fixed-width integer for seconds.
 data TimeOfDay64 = TOD {-# UNPACK #-} !Int

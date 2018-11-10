@@ -1,0 +1,52 @@
+resolver: ghc-8.7
+allow-newer: true
+extra-deps:
+  - ansi-terminal-0.8.2@sha256:56aeb0dbbf83905dfb39e11047d9f8562ab1e7eb601b2492082ba5b5a0fc80ec
+  - ansi-wl-pprint-0.6.8.2@sha256:8cb4b04401948c08feafa49e7ee0982b8492d599163107b6934093f1a912f54e
+  - async-2.2.1@sha256:61789382f449a02f827e70a029ba8f24a223b9c6b3792bb094fbd41ee360e851
+  - attoparsec-0.13.2.2@sha256:6a0baba19991e84ef939056e7b411ad3a1ea0fb5e1e8fce7ca50e96c84b206c8
+  - base-compat-0.10.5@sha256:d49e174ed0daecd059c52d13d4f4de87b5609c81212a22adbb92431f9cd58fff
+  - base-orphans-0.7@sha256:3faaef449038b5b9916f39dc0ccc9ed20a827ac9a91ad5e8527256fb102c4f5c
+  - base16-bytestring-0.1.1.6@sha256:ead535a30f93189068b3457496e30e3cb8a55d48b2d46f39325233d0d9987d2c
+  - call-stack-0.1.0@sha256:3453a0c5ed3a7a7de0cc0703907e05bd251c766cce8a38efe41b7188d228e3fa
+  - case-insensitive-1.2.0.11@sha256:ca2f237cba5db9c9c4238d41a7d8b583c5ca0ce8491de4027b26b17793fc3a87
+  - clock-0.7.2@sha256:c5c2514aead260101c7528d10bf0f41d9d1d7b919136e2dff77a57ec16740bd2
+  - colour-2.3.4@sha256:90257dac3d9149b2b384184638b610bf95d7d180e1e4d3a329e038f18c6b7859
+  - dlist-0.8.0.5@sha256:173bc132a63f29660de117eca5ee22bf3205675c7d5dd1f3e3779621d70c6d1a
+  - hashable-1.2.7.0@sha256:03b6836ca9cd3ad0e5a2f3cce989b001dd0e05f306a873db3196037adb30e0a4
+  - hashable-time-0.2.0.2@sha256:7a90ab319f1b5261fc4f649830ad4c6526f99141f766387c8740cbd6c52bfe0c
+  - integer-logarithms-1.0.2.2@sha256:7c35772bd3077643774da79327b582675415c78655bb5550d3b80b89e06c0499
+  - old-locale-1.0.0.7@sha256:fa998be2c7e00cd26a6e9075bea790caaf3932caa3e9497ad69bc20380dd6911
+  - old-time-1.1.0.3@sha256:c91fbb3ee73d20ccd015842b30f1f29a304893ebe0ae3128b7bbc13d5bb0d4c8
+  - optparse-applicative-0.14.3.0@sha256:b6b56a922d10911a2824b965750ddc7794de746e347afe67f1a84d05168368dc
+  - https://github.com/haskell/primitive/archive/f86391d08ccf7e9a94463f329a74eaeb24d6de02.zip
+  - QuickCheck-2.11.3@sha256:e4c56f52532c993fc4460aeac7a2543dc03a68fba36eff420f3294d4d2622416
+  - quickcheck-instances-0.3.19@sha256:4dd72c43d87c3f8fcc28883295a39870e4e9d49919d43c7b17e41ece8ccae11e
+  - random-1.1@sha256:7b67624fd76ddf97c206de0801dc7e888097e9d572974be9b9ea6551d76965df
+  - scientific-0.3.6.2@sha256:dd49abc76bd8e2b57e7a057dc2bb742a00527b4bf9350f9374be03b5934e55d8
+  - tagged-0.8.6@sha256:b5e1de3b14ff198b548928f686e5e8783301dc231413f751c23f4ee10cd47a7c
+  - tasty-1.1.0.4@sha256:1310ceed449b3227614b329a1672a2c5bb046cb49e281996523567b3b0ad9ecc
+  - tasty-hunit-0.10.0.1@sha256:b8d274e67e3176df234e4f3536e9e000eaf947a12b3dd31052301da98a2574de
+  - tasty-quickcheck-0.10@sha256:9ddbacf1504bbbc4b99ab447d26651ad8454b69ceced3486e4623dccb89fb3d9
+  - tf-random-0.5@sha256:14012837d0f0e18fdbbe3d56e67da8622ee5e20b180abce952dd50bd9f36b326
+  - time-locale-compat-0.1.1.5@sha256:24b10ab3de20f5fc00f0e4f7832ac66dd5597033b78cff3bd6b4505d8a652e5b
+  - transformers-compat-0.6.2@sha256:3569e3a38065c66c99eca44ce67fba2747628d1b87d8c1b6bba2e910d79f0df1
+  - unbounded-delays-0.1.1.0@sha256:8e57c6ffb72ed605b85c69d3b3a7ebbbbb70bfb5e9b9816309f1f733240838f2
+  - unordered-containers-0.2.9.0@sha256:124a5241860711a0e5c10e94d8aec8a127f0094df7a537cc1786e198d7571dfe
+  - uuid-types-1.0.3@sha256:01887ed945e74c3c361b00700bd9aeead37d1124d39c0d4f190f89fb0e909c47
+  - vector-0.12.0.1@sha256:3d644fff350ee3eee2896e4d00cb45e73956f2862f0b18ee502282702682b978
+  - wcwidth-0.0.2@sha256:77531eb6683c505c22ab3fa11bbc43d3ce1e7dac21401d4d5a19677d348bb5f3
+packages:
+  - '.'
+  - attoparsec-iso8601
+ghc-build: standard
+setup-info:
+  ghc:
+    linux64:
+      8.7.20181108:
+        url: https://1835-111412813-gh.circle-artifacts.com/0/tmp/ghc-bindist/ghc-8.7.20181108-x86_64-unknown-linux.tar.xz
+        sha256: 0ebab31a0b98106bb89f5ac07a9b655acbadb04d6f02c2bd305db7ee8b6d766b
+    macosx:
+      8.7.20181108:
+        url: https://1834-111412813-gh.circle-artifacts.com/0/tmp/ghc-bindist/ghc-8.7.20181108-x86_64-apple-darwin.tar.xz
+        sha256: 49bd5ef3c4406f24b01f40d50fc0d58670988bb0fe7381d1bda68ff342fadbc8

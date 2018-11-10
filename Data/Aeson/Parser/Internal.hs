@@ -1,10 +1,9 @@
 {-# LANGUAGE BangPatterns #-}
 {-# LANGUAGE CPP #-}
+{-# LANGUAGE MagicHash #-}
 {-# LANGUAGE NoImplicitPrelude #-}
 {-# LANGUAGE OverloadedStrings #-}
-#if MIN_VERSION_ghc_prim(0,3,1)
-{-# LANGUAGE MagicHash #-}
-#endif
+
 -- |
 -- Module:      Data.Aeson.Parser.Internal
 -- Copyright:   (c) 2011-2016 Bryan O'Sullivan
@@ -52,12 +51,9 @@ import qualified Data.ByteString.Lazy as L
 import qualified Data.HashMap.Strict as H
 import qualified Data.Scientific as Sci
 import Data.Aeson.Parser.Unescape (unescapeText)
-
-#if MIN_VERSION_ghc_prim(0,3,1)
 import GHC.Base (Int#, (==#), isTrue#, word2Int#, orI#, andI#)
 import GHC.Word (Word8(W8#))
 import qualified Data.Text.Encoding as TE
-#endif
 
 #define BACKSLASH 92
 #define CLOSE_CURLY 125
@@ -209,7 +205,6 @@ jstring = A.word8 DOUBLE_QUOTE *> jstring_
 jstring_ :: Parser Text
 {-# INLINE jstring_ #-}
 jstring_ = {-# SCC "jstring_" #-} do
-#if MIN_VERSION_ghc_prim(0,3,1)
   (s, S _ escaped) <- A.runScanner startState go <* A.anyWord8
   -- We escape only if there are
   -- non-ascii (over 7bit) characters or backslash present.
@@ -236,20 +231,6 @@ jstring_ = {-# SCC "jstring_" #-} do
             `orI#` (w `andI#` 0x1f# ==# w)     -- c < 0x20
 
 data S = S Int# Int#
-#else
-  s <- A.scan startState go <* A.anyWord8
-  case unescapeText s of
-    Right r  -> return r
-    Left err -> fail $ show err
- where
-    startState              = False
-    go a c
-      | a                  = Just False
-      | c == DOUBLE_QUOTE  = Nothing
-      | otherwise = let a' = c == backslash
-                    in Just a'
-      where backslash = BACKSLASH
-#endif
 
 decodeWith :: Parser Value -> (Value -> Result a) -> L.ByteString -> Maybe a
 decodeWith p to s =

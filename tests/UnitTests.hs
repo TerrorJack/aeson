@@ -1,18 +1,13 @@
-{-# LANGUAGE CPP #-}
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE NoImplicitPrelude #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE QuasiQuotes #-}
 
 -- For Data.Aeson.Types.camelTo
 {-# OPTIONS_GHC -fno-warn-deprecations #-}
-
-#if MIN_VERSION_base(4,9,0)
 {-# OPTIONS_GHC -fno-warn-unused-top-binds #-}
-#endif
 
 module UnitTests
     (
@@ -27,7 +22,6 @@ import Control.Monad (forM, forM_)
 import Data.Aeson ((.=), (.:), (.:?), (.:!), FromJSON(..), FromJSONKeyFunction(..), FromJSONKey(..), ToJSON1(..), decode, eitherDecode, encode, fromJSON, genericParseJSON, genericToEncoding, genericToJSON, object, withObject, withEmbeddedJSON)
 import Data.Aeson.Internal (JSONPathElement(..), formatError)
 import Data.Aeson.QQ.Simple (aesonQQ)
-import Data.Aeson.TH (deriveJSON, deriveToJSON, deriveToJSON1)
 import Data.Aeson.Text (encodeToTextBuilder)
 import Data.Aeson.Types (Options(..), Result(Success), ToJSON(..), Value(Null, Object), camelTo, camelTo2, defaultOptions, omitNothingFields, parse)
 import Data.Char (toUpper)
@@ -43,7 +37,7 @@ import Data.Text (Text)
 import Data.Time (UTCTime)
 import Data.Time.Format (parseTime)
 import Data.Time.Locale.Compat (defaultTimeLocale)
-import GHC.Generics (Generic)
+import GHC.Generics (Generic, Generic1)
 import Instances ()
 import Numeric.Natural (Natural)
 import System.Directory (getDirectoryContents)
@@ -339,16 +333,11 @@ fromJSONKeyAssertions =
     [ assertIsCoerce  "Text"            (fromJSONKey :: FromJSONKeyFunction Text)
     , assertIsCoerce  "Tagged Int Text" (fromJSONKey :: FromJSONKeyFunction (Tagged Int Text))
     , assertIsCoerce  "MyText"          (fromJSONKey :: FromJSONKeyFunction MyText)
-
-#if __GLASGOW_HASKELL__ >= 710
     , assertIsCoerce' "MyText'"         (fromJSONKey :: FromJSONKeyFunction MyText')
-#endif
     ]
   where
     assertIsCoerce _ (FromJSONKeyCoerce _) = pure ()
     assertIsCoerce n _                     = assertFailure n
-
-#if __GLASGOW_HASKELL__ >= 710
     assertIsCoerce' _ (FromJSONKeyCoerce _) = pure ()
     assertIsCoerce' n _                     = pickWithRules (assertFailure n) (pure ())
 
@@ -360,7 +349,6 @@ pickWithRules
 pickWithRules _ = id
 {-# NOINLINE pickWithRules #-}
 {-# RULES "pickWithRules/rule" [0] forall x. pickWithRules x = const x #-}
-#endif
 
 ------------------------------------------------------------------------------
 -- Regressions
@@ -419,6 +407,7 @@ encoderComparisonTests = do
 
 -- A regression test for: https://github.com/bos/aeson/issues/293
 data MyRecord = MyRecord {_field1 :: Maybe Int, _field2 :: Maybe Bool}
+  deriving Generic
 
 data MyRecord2 = MyRecord2 {_field3 :: Maybe Int, _field4 :: Maybe Bool}
   deriving Generic
@@ -517,6 +506,7 @@ _blacklist = HashSet.fromList [
 
 -- A regression test for: https://github.com/bos/aeson/pull/455
 data Foo a = FooNil | FooCons (Foo Int)
+  deriving (Generic, Generic1)
 
 pr455 :: Assertion
 pr455 = assertEqual "FooCons FooNil"
@@ -617,9 +607,20 @@ bigNaturalKeyDecoding =
     (Left "Error in $['1e2000']: expected a number with exponent <= 1024, encountered Number")
     ((eitherDecode :: L.ByteString -> Either String (HashMap Natural Value)) "{ \"1e2000\": null }")
 
-deriveJSON defaultOptions{omitNothingFields=True} ''MyRecord
+instance ToJSON MyRecord where
+  toJSON = genericToJSON defaultOptions{omitNothingFields=True}
+  toEncoding = genericToEncoding defaultOptions{omitNothingFields=True}
 
-deriveToJSON  defaultOptions ''Foo
-deriveToJSON1 defaultOptions ''Foo
+instance FromJSON MyRecord where
+  parseJSON = genericParseJSON defaultOptions{omitNothingFields=True}
 
-deriveJSON defaultOptions{omitNothingFields=True,unwrapUnaryRecords=True} ''SingleMaybeField
+instance ToJSON a => ToJSON (Foo a)
+
+instance ToJSON1 Foo
+
+instance ToJSON SingleMaybeField where
+  toJSON = genericToJSON defaultOptions{omitNothingFields=True,unwrapUnaryRecords=True}
+  toEncoding = genericToEncoding defaultOptions{omitNothingFields=True,unwrapUnaryRecords=True}
+
+instance FromJSON SingleMaybeField where
+  parseJSON = genericParseJSON defaultOptions{omitNothingFields=True,unwrapUnaryRecords=True}

@@ -26,47 +26,16 @@ description:
 extra-source-files:
     *.yaml
     README.markdown
-    benchmarks/*.cabal
-    benchmarks/*.hs
-    benchmarks/*.py
-    benchmarks/Compare/*.hs
-    benchmarks/Makefile
-    benchmarks/Typed/*.hs
     benchmarks/json-data/*.json
-    cbits/*.c
     changelog.md
-    examples/*.cabal
-    examples/*.hs
-    examples/Twitter/*.hs
     ffi/Data/Aeson/Parser/*.hs
-    include/*.h
     tests/JSONTestSuite/test_parsing/*.json
     tests/JSONTestSuite/test_transform/*.json
     pure/Data/Aeson/Parser/*.hs
 
-flag developer
-  description: operate in developer mode
-  default: False
-  manual: True
-
-flag fast
-  description: compile without optimizations
-  default: False
-  manual: True
-
-flag bytestring-builder
-  description: Depend on the bytestring-builder package for backwards compatibility.
-  default: False
-  manual: False
-
-flag cffi
-  description: Controls whether to include c-ffi bits or pure haskell. Default to False for security.
-  default: False
-  manual: True
-
 library
   default-language: Haskell2010
-  hs-source-dirs: . attoparsec-iso8601/
+  hs-source-dirs: . attoparsec-iso8601 pure
 
   exposed-modules:
     Data.Aeson
@@ -74,7 +43,6 @@ library
     Data.Aeson.Parser
     Data.Aeson.Text
     Data.Aeson.Types
-    Data.Aeson.TH
     Data.Aeson.QQ.Simple
 
     Data.Aeson.Encoding.Internal
@@ -91,6 +59,7 @@ library
     Data.Aeson.Encoding.Builder
     Data.Aeson.Internal.Functions
     Data.Aeson.Parser.Unescape
+    Data.Aeson.Parser.UnescapePure
     Data.Aeson.Parser.Time
     Data.Aeson.Types.FromJSON
     Data.Aeson.Types.Generic
@@ -103,6 +72,7 @@ library
   -- GHC bundled libs
   build-depends:
     base             >= 4.5.0.0 && < 5,
+    bytestring       >= 0.10.4 && < 0.11,
     containers       >= 0.4.2.1 && < 0.7,
     deepseq          >= 1.3.0.0 && < 1.5,
     ghc-prim         >= 0.2     && < 0.6,
@@ -114,33 +84,10 @@ library
   build-depends:
     base-compat     >= 0.9.1    && < 0.11
 
-  if flag(bytestring-builder)
-    build-depends: bytestring >= 0.9.2 && < 0.10.4,
-                   bytestring-builder >= 0.10.4 && < 1
-  else
-    build-depends: bytestring >= 0.10.4 && < 0.11
-
-  if !impl(ghc >= 8.6)
-    build-depends:
-      contravariant >=1.4.1    && <1.6
-
-  if !impl(ghc >= 8.0)
-    -- `Data.Semigroup` and `Control.Monad.Fail` and `Control.Monad.IO.Class` are available in base only since GHC 8.0 / base 4.9
-    build-depends:
-      semigroups          >= 0.18.5  && < 0.19,
-      transformers        >= 0.3.0.0 && < 0.6,
-      transformers-compat >= 0.6.2   && < 0.7,
-      fail == 4.9.*
-
-  if !impl(ghc >= 7.10)
-    -- `Numeric.Natural` is available in base only since GHC 7.10 / base 4.8
-    build-depends: nats >= 1.1.1 && < 1.2,
-                   void >= 0.7.2 && < 0.8
-
   -- cannot use latest version
   build-depends:
     unordered-containers >= 0.2.8.0  && < 0.3,
-     
+
     -- not in LTS-12.10
     tagged               >= 0.8.5    && < 0.9,
     primitive            >= 0.6.3.0  && < 0.7
@@ -151,47 +98,22 @@ library
     dlist                >= 0.8.0.4  && < 0.9,
     hashable             >= 1.2.7.0  && < 1.3,
     scientific           >= 0.3.6.2  && < 0.4,
-    th-abstraction       >= 0.2.8.0  && < 0.3,
     time-locale-compat   >= 0.1.1.5  && < 0.2,
     uuid-types           >= 1.0.3    && < 1.1,
     vector               >= 0.12.0.1 && < 0.13
 
   ghc-options: -Wall
 
-  if flag(developer)
-    ghc-options: -Werror
-    ghc-prof-options: -auto-all
-
-  if flag(fast)
-    ghc-options: -O0
-  else
-    ghc-options: -O2
-
-  include-dirs: include
-  if impl(ghcjs) || !flag(cffi)
-    hs-source-dirs: pure
-    other-modules: Data.Aeson.Parser.UnescapePure
-  else
-    c-sources: cbits/unescape_string.c
-    cpp-options: -DCFFI
-    hs-source-dirs: ffi
-    other-modules: Data.Aeson.Parser.UnescapeFFI
-
 test-suite tests
   default-language: Haskell2010
   type: exitcode-stdio-1.0
   hs-source-dirs: tests ffi pure
   main-is: Tests.hs
-  c-sources: cbits/unescape_string.c
   ghc-options: -Wall -threaded -rtsopts
 
   other-modules:
     Data.Aeson.Parser.UnescapeFFI
     Data.Aeson.Parser.UnescapePure
-    DataFamilies.Properties
-    DataFamilies.Instances
-    DataFamilies.Encoders
-    DataFamilies.Types
     Encoders
     ErrorMessages
     Functions
@@ -212,16 +134,16 @@ test-suite tests
     base-compat,
     base-orphans >= 0.5.3 && <0.8,
     base16-bytestring,
+    bytestring >= 0.10.4,
     containers,
     directory,
     dlist,
     filepath,
-    generic-deriving >= 1.10 && < 1.13,
     ghc-prim >= 0.2,
     hashable >= 1.2.4.0,
+    hashable-time >= 0.2 && <0.3,
     scientific,
     tagged,
-    template-haskell,
     tasty,
     tasty-hunit,
     tasty-quickcheck,
@@ -232,28 +154,6 @@ test-suite tests
     uuid-types,
     vector,
     quickcheck-instances >= 0.3.16
-
-  if flag(bytestring-builder)
-    build-depends: bytestring >= 0.9 && < 0.10.4,
-                   bytestring-builder >= 0.10.4 && < 1
-  else
-    build-depends: bytestring >= 0.10.4
-
-  if !impl(ghc >= 8.0)
-    build-depends:
-      semigroups >= 0.18.2 && < 0.19,
-      transformers >= 0.2.2.0,
-      transformers-compat >= 0.3
-
-  if !impl(ghc >= 7.10)
-    build-depends: nats >=1 && <1.2,
-                   void >=0.7.2 && <0.8
-
-  if impl(ghc >= 7.8)
-    build-depends: hashable-time >= 0.2 && <0.3
-
-  if flag(fast)
-    ghc-options: -fno-enable-rewrite-rules
 
 source-repository head
   type:     git

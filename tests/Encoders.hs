@@ -1,13 +1,10 @@
-{-# LANGUAGE CPP #-}
 {-# LANGUAGE GADTs #-}
 {-# LANGUAGE NoImplicitPrelude #-}
-{-# LANGUAGE TemplateHaskell #-}
 
 module Encoders (module Encoders) where
 
 import Prelude.Compat
 
-import Data.Aeson.TH
 import Data.Aeson.Types
 import Options
 import Types
@@ -17,45 +14,45 @@ import Types
 --------------------------------------------------------------------------------
 
 thNullaryToJSONString :: Nullary -> Value
-thNullaryToJSONString = $(mkToJSON defaultOptions ''Nullary)
+thNullaryToJSONString = genericToJSON defaultOptions
 
 thNullaryToEncodingString :: Nullary -> Encoding
-thNullaryToEncodingString = $(mkToEncoding defaultOptions ''Nullary)
+thNullaryToEncodingString = genericToEncoding defaultOptions
 
 thNullaryParseJSONString :: Value -> Parser Nullary
-thNullaryParseJSONString = $(mkParseJSON defaultOptions ''Nullary)
+thNullaryParseJSONString = genericParseJSON defaultOptions
 
 
 thNullaryToJSON2ElemArray :: Nullary -> Value
-thNullaryToJSON2ElemArray = $(mkToJSON opts2ElemArray ''Nullary)
+thNullaryToJSON2ElemArray = genericToJSON opts2ElemArray
 
 thNullaryToEncoding2ElemArray :: Nullary -> Encoding
-thNullaryToEncoding2ElemArray = $(mkToEncoding opts2ElemArray ''Nullary)
+thNullaryToEncoding2ElemArray = genericToEncoding opts2ElemArray
 
 thNullaryParseJSON2ElemArray :: Value -> Parser Nullary
-thNullaryParseJSON2ElemArray = $(mkParseJSON opts2ElemArray ''Nullary)
+thNullaryParseJSON2ElemArray = genericParseJSON opts2ElemArray
 
 
 thNullaryToJSONTaggedObject :: Nullary -> Value
-thNullaryToJSONTaggedObject = $(mkToJSON optsTaggedObject ''Nullary)
+thNullaryToJSONTaggedObject = genericToJSON optsTaggedObject
 
 thNullaryToEncodingTaggedObject :: Nullary -> Encoding
-thNullaryToEncodingTaggedObject = $(mkToEncoding optsTaggedObject ''Nullary)
+thNullaryToEncodingTaggedObject = genericToEncoding optsTaggedObject
 
 thNullaryParseJSONTaggedObject :: Value -> Parser Nullary
-thNullaryParseJSONTaggedObject = $(mkParseJSON optsTaggedObject ''Nullary)
+thNullaryParseJSONTaggedObject = genericParseJSON optsTaggedObject
 
 
 thNullaryToJSONObjectWithSingleField :: Nullary -> Value
 thNullaryToJSONObjectWithSingleField =
-  $(mkToJSON optsObjectWithSingleField ''Nullary)
+  genericToJSON optsObjectWithSingleField
 
 thNullaryToEncodingObjectWithSingleField :: Nullary -> Encoding
 thNullaryToEncodingObjectWithSingleField =
-  $(mkToEncoding optsObjectWithSingleField ''Nullary)
+  genericToEncoding optsObjectWithSingleField
 
 thNullaryParseJSONObjectWithSingleField :: Value -> Parser Nullary
-thNullaryParseJSONObjectWithSingleField = $(mkParseJSON optsObjectWithSingleField ''Nullary)
+thNullaryParseJSONObjectWithSingleField = genericParseJSON optsObjectWithSingleField
 
 gNullaryToJSONString :: Nullary -> Value
 gNullaryToJSONString = genericToJSON defaultOptions
@@ -110,60 +107,60 @@ type LiftParseJSON f a =
     (Value -> Parser a) -> (Value -> Parser [a]) -> Value -> Parser (f a)
 
 thSomeTypeToJSON2ElemArray :: SomeType Int -> Value
-thSomeTypeToJSON2ElemArray = $(mkToJSON opts2ElemArray ''SomeType)
+thSomeTypeToJSON2ElemArray = genericToJSON opts2ElemArray
 
 thSomeTypeToEncoding2ElemArray :: SomeType Int -> Encoding
-thSomeTypeToEncoding2ElemArray = $(mkToEncoding opts2ElemArray ''SomeType)
+thSomeTypeToEncoding2ElemArray = genericToEncoding opts2ElemArray
 
 thSomeTypeLiftToJSON2ElemArray :: LiftToJSON SomeType a
-thSomeTypeLiftToJSON2ElemArray = $(mkLiftToJSON opts2ElemArray ''SomeType)
+thSomeTypeLiftToJSON2ElemArray = genericLiftToJSON opts2ElemArray
 
 thSomeTypeLiftToEncoding2ElemArray :: LiftToEncoding SomeType a
-thSomeTypeLiftToEncoding2ElemArray = $(mkLiftToEncoding opts2ElemArray ''SomeType)
+thSomeTypeLiftToEncoding2ElemArray = genericLiftToEncoding opts2ElemArray
 
 thSomeTypeParseJSON2ElemArray :: Value -> Parser (SomeType Int)
-thSomeTypeParseJSON2ElemArray = $(mkParseJSON opts2ElemArray ''SomeType)
+thSomeTypeParseJSON2ElemArray = genericParseJSON opts2ElemArray
 
 thSomeTypeLiftParseJSON2ElemArray :: LiftParseJSON SomeType a
-thSomeTypeLiftParseJSON2ElemArray = $(mkLiftParseJSON opts2ElemArray ''SomeType)
+thSomeTypeLiftParseJSON2ElemArray = genericLiftParseJSON opts2ElemArray
 
 
 thSomeTypeToJSONTaggedObject :: SomeType Int -> Value
-thSomeTypeToJSONTaggedObject = $(mkToJSON optsTaggedObject ''SomeType)
+thSomeTypeToJSONTaggedObject = genericToJSON optsTaggedObject
 
 thSomeTypeToEncodingTaggedObject :: SomeType Int -> Encoding
-thSomeTypeToEncodingTaggedObject = $(mkToEncoding optsTaggedObject ''SomeType)
+thSomeTypeToEncodingTaggedObject = genericToEncoding optsTaggedObject
 
 thSomeTypeLiftToJSONTaggedObject :: LiftToJSON SomeType a
-thSomeTypeLiftToJSONTaggedObject = $(mkLiftToJSON optsTaggedObject ''SomeType)
+thSomeTypeLiftToJSONTaggedObject = genericLiftToJSON optsTaggedObject
 
 thSomeTypeLiftToEncodingTaggedObject :: LiftToEncoding SomeType a
-thSomeTypeLiftToEncodingTaggedObject = $(mkLiftToEncoding optsTaggedObject ''SomeType)
+thSomeTypeLiftToEncodingTaggedObject = genericLiftToEncoding optsTaggedObject
 
 thSomeTypeParseJSONTaggedObject :: Value -> Parser (SomeType Int)
-thSomeTypeParseJSONTaggedObject = $(mkParseJSON optsTaggedObject ''SomeType)
+thSomeTypeParseJSONTaggedObject = genericParseJSON optsTaggedObject
 
 thSomeTypeLiftParseJSONTaggedObject :: LiftParseJSON SomeType a
-thSomeTypeLiftParseJSONTaggedObject = $(mkLiftParseJSON optsTaggedObject ''SomeType)
+thSomeTypeLiftParseJSONTaggedObject = genericLiftParseJSON optsTaggedObject
 
 
 thSomeTypeToJSONObjectWithSingleField :: SomeType Int -> Value
-thSomeTypeToJSONObjectWithSingleField = $(mkToJSON optsObjectWithSingleField ''SomeType)
+thSomeTypeToJSONObjectWithSingleField = genericToJSON optsObjectWithSingleField
 
 thSomeTypeToEncodingObjectWithSingleField :: SomeType Int -> Encoding
-thSomeTypeToEncodingObjectWithSingleField = $(mkToEncoding optsObjectWithSingleField ''SomeType)
+thSomeTypeToEncodingObjectWithSingleField = genericToEncoding optsObjectWithSingleField
 
 thSomeTypeLiftToJSONObjectWithSingleField :: LiftToJSON SomeType a
-thSomeTypeLiftToJSONObjectWithSingleField = $(mkLiftToJSON optsObjectWithSingleField ''SomeType)
+thSomeTypeLiftToJSONObjectWithSingleField = genericLiftToJSON optsObjectWithSingleField
 
 thSomeTypeLiftToEncodingObjectWithSingleField :: LiftToEncoding SomeType a
-thSomeTypeLiftToEncodingObjectWithSingleField = $(mkLiftToEncoding optsObjectWithSingleField ''SomeType)
+thSomeTypeLiftToEncodingObjectWithSingleField = genericLiftToEncoding optsObjectWithSingleField
 
 thSomeTypeParseJSONObjectWithSingleField :: Value -> Parser (SomeType Int)
-thSomeTypeParseJSONObjectWithSingleField = $(mkParseJSON optsObjectWithSingleField ''SomeType)
+thSomeTypeParseJSONObjectWithSingleField = genericParseJSON optsObjectWithSingleField
 
 thSomeTypeLiftParseJSONObjectWithSingleField :: LiftParseJSON SomeType a
-thSomeTypeLiftParseJSONObjectWithSingleField = $(mkLiftParseJSON optsObjectWithSingleField ''SomeType)
+thSomeTypeLiftParseJSONObjectWithSingleField = genericLiftParseJSON optsObjectWithSingleField
 
 
 gSomeTypeToJSON2ElemArray :: SomeType Int -> Value
@@ -175,7 +172,6 @@ gSomeTypeToEncoding2ElemArray = genericToEncoding opts2ElemArray
 gSomeTypeParseJSON2ElemArray :: Value -> Parser (SomeType Int)
 gSomeTypeParseJSON2ElemArray = genericParseJSON opts2ElemArray
 
-#if __GLASGOW_HASKELL__ >= 706
 gSomeTypeLiftToEncoding2ElemArray :: LiftToEncoding SomeType a
 gSomeTypeLiftToEncoding2ElemArray = genericLiftToEncoding opts2ElemArray
 
@@ -184,8 +180,6 @@ gSomeTypeLiftToJSON2ElemArray = genericLiftToJSON opts2ElemArray
 
 gSomeTypeLiftParseJSON2ElemArray :: LiftParseJSON SomeType a
 gSomeTypeLiftParseJSON2ElemArray = genericLiftParseJSON opts2ElemArray
-#endif
-
 
 gSomeTypeToJSONTaggedObject :: SomeType Int -> Value
 gSomeTypeToJSONTaggedObject = genericToJSON optsTaggedObject
@@ -196,7 +190,6 @@ gSomeTypeToEncodingTaggedObject = genericToEncoding optsTaggedObject
 gSomeTypeParseJSONTaggedObject :: Value -> Parser (SomeType Int)
 gSomeTypeParseJSONTaggedObject = genericParseJSON optsTaggedObject
 
-#if __GLASGOW_HASKELL__ >= 706
 gSomeTypeLiftToEncodingTaggedObject :: LiftToEncoding SomeType a
 gSomeTypeLiftToEncodingTaggedObject = genericLiftToEncoding optsTaggedObject
 
@@ -205,8 +198,6 @@ gSomeTypeLiftToJSONTaggedObject = genericLiftToJSON optsTaggedObject
 
 gSomeTypeLiftParseJSONTaggedObject :: LiftParseJSON SomeType a
 gSomeTypeLiftParseJSONTaggedObject = genericLiftParseJSON optsTaggedObject
-#endif
-
 
 gSomeTypeToJSONObjectWithSingleField :: SomeType Int -> Value
 gSomeTypeToJSONObjectWithSingleField = genericToJSON optsObjectWithSingleField
@@ -217,7 +208,6 @@ gSomeTypeToEncodingObjectWithSingleField = genericToEncoding optsObjectWithSingl
 gSomeTypeParseJSONObjectWithSingleField :: Value -> Parser (SomeType Int)
 gSomeTypeParseJSONObjectWithSingleField = genericParseJSON optsObjectWithSingleField
 
-#if __GLASGOW_HASKELL__ >= 706
 gSomeTypeLiftToEncodingObjectWithSingleField :: LiftToEncoding SomeType a
 gSomeTypeLiftToEncodingObjectWithSingleField = genericLiftToEncoding optsObjectWithSingleField
 
@@ -226,8 +216,6 @@ gSomeTypeLiftToJSONObjectWithSingleField = genericLiftToJSON optsObjectWithSingl
 
 gSomeTypeLiftParseJSONObjectWithSingleField :: LiftParseJSON SomeType a
 gSomeTypeLiftParseJSONObjectWithSingleField = genericLiftParseJSON optsObjectWithSingleField
-#endif
-
 
 gSomeTypeToJSONOmitNothingFields :: SomeType Int -> Value
 gSomeTypeToJSONOmitNothingFields = genericToJSON optsOmitNothingFields
@@ -241,13 +229,13 @@ gSomeTypeToEncodingOmitNothingFields = genericToEncoding optsOmitNothingFields
 --------------------------------------------------------------------------------
 
 thOptionFieldToJSON :: OptionField -> Value
-thOptionFieldToJSON = $(mkToJSON optsOptionField 'OptionField)
+thOptionFieldToJSON = genericToJSON optsOptionField
 
 thOptionFieldToEncoding :: OptionField -> Encoding
-thOptionFieldToEncoding = $(mkToEncoding optsOptionField 'OptionField)
+thOptionFieldToEncoding = genericToEncoding optsOptionField
 
 thOptionFieldParseJSON :: Value -> Parser OptionField
-thOptionFieldParseJSON = $(mkParseJSON optsOptionField 'OptionField)
+thOptionFieldParseJSON = genericParseJSON optsOptionField
 
 gOptionFieldToJSON :: OptionField -> Value
 gOptionFieldToJSON = genericToJSON optsOptionField
@@ -259,7 +247,7 @@ gOptionFieldParseJSON :: Value -> Parser OptionField
 gOptionFieldParseJSON = genericParseJSON optsOptionField
 
 thMaybeFieldToJSON :: MaybeField -> Value
-thMaybeFieldToJSON = $(mkToJSON optsOptionField 'MaybeField)
+thMaybeFieldToJSON = genericToJSON optsOptionField
 
 
 --------------------------------------------------------------------------------
@@ -274,30 +262,28 @@ thMaybeFieldToJSON = $(mkToJSON optsOptionField 'MaybeField)
 -- NOTE 2: We actually only use the INCOHERENT pragma on specific instances
 -- instead of the IncoherentInstances language extension. Therefore, this is
 -- only supported on GHC versions >= 7.10.
-#if __GLASGOW_HASKELL__ >= 710
 incoherentInstancesNeededParseJSONString :: FromJSON a => Value -> Parser (IncoherentInstancesNeeded a)
 incoherentInstancesNeededParseJSONString = case () of
-  _ | True  -> $(mkParseJSON defaultOptions ''IncoherentInstancesNeeded)
+  _ | True  -> genericParseJSON defaultOptions
     | False -> genericParseJSON defaultOptions
 
 incoherentInstancesNeededToJSON :: ToJSON a => IncoherentInstancesNeeded a -> Value
 incoherentInstancesNeededToJSON = case () of
-  _ | True  -> $(mkToJSON defaultOptions ''IncoherentInstancesNeeded)
+  _ | True  -> genericToJSON defaultOptions
     | False -> genericToJSON defaultOptions
-#endif
 
 -------------------------------------------------------------------------------
 -- EitherTextInt encoders/decodes
 -------------------------------------------------------------------------------
 
 thEitherTextIntToJSONUntaggedValue :: EitherTextInt -> Value
-thEitherTextIntToJSONUntaggedValue = $(mkToJSON optsUntaggedValue ''EitherTextInt)
+thEitherTextIntToJSONUntaggedValue = genericToJSON optsUntaggedValue
 
 thEitherTextIntToEncodingUntaggedValue :: EitherTextInt -> Encoding
-thEitherTextIntToEncodingUntaggedValue = $(mkToEncoding optsUntaggedValue ''EitherTextInt)
+thEitherTextIntToEncodingUntaggedValue = genericToEncoding optsUntaggedValue
 
 thEitherTextIntParseJSONUntaggedValue :: Value -> Parser EitherTextInt
-thEitherTextIntParseJSONUntaggedValue = $(mkParseJSON optsUntaggedValue ''EitherTextInt)
+thEitherTextIntParseJSONUntaggedValue = genericParseJSON optsUntaggedValue
 
 
 gEitherTextIntToJSONUntaggedValue :: EitherTextInt -> Value
@@ -314,23 +300,23 @@ gEitherTextIntParseJSONUntaggedValue = genericParseJSON optsUntaggedValue
 --------------------------------------------------------------------------------
 
 thApproxToJSONUnwrap :: Approx String -> Value
-thApproxToJSONUnwrap = $(mkToJSON optsUnwrapUnaryRecords ''Approx)
+thApproxToJSONUnwrap = genericToJSON optsUnwrapUnaryRecords
 
 thApproxToEncodingUnwrap :: Approx String -> Encoding
-thApproxToEncodingUnwrap = $(mkToEncoding optsUnwrapUnaryRecords ''Approx)
+thApproxToEncodingUnwrap = genericToEncoding optsUnwrapUnaryRecords
 
 thApproxParseJSONUnwrap :: Value -> Parser (Approx String)
-thApproxParseJSONUnwrap = $(mkParseJSON optsUnwrapUnaryRecords ''Approx)
+thApproxParseJSONUnwrap = genericParseJSON optsUnwrapUnaryRecords
 
 
 thApproxToJSONDefault :: Approx String -> Value
-thApproxToJSONDefault = $(mkToJSON defaultOptions ''Approx)
+thApproxToJSONDefault = genericToJSON defaultOptions
 
 thApproxToEncodingDefault :: Approx String -> Encoding
-thApproxToEncodingDefault = $(mkToEncoding defaultOptions ''Approx)
+thApproxToEncodingDefault = genericToEncoding defaultOptions
 
 thApproxParseJSONDefault :: Value -> Parser (Approx String)
-thApproxParseJSONDefault = $(mkParseJSON defaultOptions ''Approx)
+thApproxParseJSONDefault = genericParseJSON defaultOptions
 
 gApproxToJSONUnwrap :: Approx String -> Value
 gApproxToJSONUnwrap = genericToJSON optsUnwrapUnaryRecords
@@ -352,49 +338,26 @@ gApproxParseJSONDefault :: Value -> Parser (Approx String)
 gApproxParseJSONDefault = genericParseJSON defaultOptions
 
 --------------------------------------------------------------------------------
--- GADT encoders/decoders
---------------------------------------------------------------------------------
-
-thGADTToJSONUnwrap :: GADT String -> Value
-thGADTToJSONUnwrap = $(mkToJSON optsUnwrapUnaryRecords ''GADT)
-
-thGADTToEncodingUnwrap :: GADT String -> Encoding
-thGADTToEncodingUnwrap = $(mkToEncoding optsUnwrapUnaryRecords ''GADT)
-
-thGADTParseJSONUnwrap :: Value -> Parser (GADT String)
-thGADTParseJSONUnwrap = $(mkParseJSON optsUnwrapUnaryRecords ''GADT)
-
-
-thGADTToJSONDefault :: GADT String -> Value
-thGADTToJSONDefault = $(mkToJSON defaultOptions ''GADT)
-
-thGADTToEncodingDefault :: GADT String -> Encoding
-thGADTToEncodingDefault = $(mkToEncoding defaultOptions ''GADT)
-
-thGADTParseJSONDefault :: Value -> Parser (GADT String)
-thGADTParseJSONDefault = $(mkParseJSON defaultOptions ''GADT)
-
---------------------------------------------------------------------------------
 -- OneConstructor encoders/decoders
 --------------------------------------------------------------------------------
 
 thOneConstructorToJSONDefault :: OneConstructor -> Value
-thOneConstructorToJSONDefault = $(mkToJSON defaultOptions ''OneConstructor)
+thOneConstructorToJSONDefault = genericToJSON defaultOptions
 
 thOneConstructorToEncodingDefault :: OneConstructor -> Encoding
-thOneConstructorToEncodingDefault = $(mkToEncoding defaultOptions ''OneConstructor)
+thOneConstructorToEncodingDefault = genericToEncoding defaultOptions
 
 thOneConstructorParseJSONDefault :: Value -> Parser OneConstructor
-thOneConstructorParseJSONDefault = $(mkParseJSON defaultOptions ''OneConstructor)
+thOneConstructorParseJSONDefault = genericParseJSON defaultOptions
 
 thOneConstructorToJSONTagged :: OneConstructor -> Value
-thOneConstructorToJSONTagged = $(mkToJSON optsTagSingleConstructors ''OneConstructor)
+thOneConstructorToJSONTagged = genericToJSON optsTagSingleConstructors
 
 thOneConstructorToEncodingTagged :: OneConstructor -> Encoding
-thOneConstructorToEncodingTagged = $(mkToEncoding optsTagSingleConstructors ''OneConstructor)
+thOneConstructorToEncodingTagged = genericToEncoding optsTagSingleConstructors
 
 thOneConstructorParseJSONTagged :: Value -> Parser OneConstructor
-thOneConstructorParseJSONTagged = $(mkParseJSON optsTagSingleConstructors ''OneConstructor)
+thOneConstructorParseJSONTagged = genericParseJSON optsTagSingleConstructors
 
 
 gOneConstructorToJSONDefault :: OneConstructor -> Value

@@ -1,4 +1,3 @@
-{-# LANGUAGE CPP #-}
 {-# LANGUAGE DeriveDataTypeable #-}
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE FlexibleInstances #-}
@@ -107,6 +106,7 @@ deriving instance Eq   (GADT a)
 deriving instance Show (GADT a)
 
 newtype MaybeField = MaybeField { maybeField :: Maybe Int }
+  deriving (Generic)
 newtype OptionField = OptionField { optionField :: Option Int }
   deriving (Eq, Show)
 
@@ -119,9 +119,7 @@ deriving instance Generic (Sum4 a b c d)
 deriving instance Generic (Approx a)
 deriving instance Generic Nullary
 deriving instance Generic (SomeType a)
-#if __GLASGOW_HASKELL__ >= 706
 deriving instance Generic1 SomeType
-#endif
 deriving instance Generic OptionField
 deriving instance Generic EitherTextInt
 
