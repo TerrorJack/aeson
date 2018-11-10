@@ -12,7 +12,6 @@ import Data.Aeson.Internal (IResult(..), formatError, ifromJSON, iparse)
 import qualified Data.Aeson.Internal as I
 import Data.Aeson.Parser (value)
 import Data.Aeson.Types
-import Data.DList (DList)
 import Data.Functor.Compose (Compose (..))
 import Data.Map.Strict (Map)
 import Data.Int (Int8)
@@ -247,7 +246,6 @@ tests = testGroup "properties" [
     , testProperty "Natural" $ roundTripEq (undefined :: Natural)
     , testProperty "Proxy" $ roundTripEq (undefined :: Proxy Int)
     , testProperty "Const" $ roundTripEq (undefined :: Const Int Char)
-    , testProperty "DList" $ roundTripEq (undefined :: DList Int)
     , testProperty "Seq" $ roundTripEq (undefined :: Seq Int)
     , testProperty "Rational" $ roundTripEq (undefined :: Rational)
     , testProperty "Ratio Int" $ roundTripEq (undefined :: Ratio Int)

@@ -102,7 +102,6 @@ import Unsafe.Coerce (unsafeCoerce)
 import qualified Data.Aeson.Compat as Compat
 import qualified Data.Aeson.Parser.Time as Time
 import qualified Data.Attoparsec.ByteString.Char8 as A (endOfInput, parseOnly, scientific)
-import qualified Data.DList as DList
 import qualified Data.IntMap as IntMap
 import qualified Data.IntSet as IntSet
 import qualified Data.Map.Strict as M
@@ -1383,20 +1382,6 @@ instance (FromJSON a) => FromJSON (NonEmpty a) where
 
 instance FromJSON Scientific where
     parseJSON = withScientific "Scientific" pure
-    {-# INLINE parseJSON #-}
-
--------------------------------------------------------------------------------
--- DList
--------------------------------------------------------------------------------
-
-instance FromJSON1 DList.DList where
-    liftParseJSON p _ = withArray "DList a" $
-      fmap DList.fromList .
-      Tr.sequence . zipWith (parseIndexedJSON p) [0..]
-    {-# INLINE liftParseJSON #-}
-
-instance (FromJSON a) => FromJSON (DList.DList a) where
-    parseJSON = parseJSON1
     {-# INLINE parseJSON #-}
 
 -------------------------------------------------------------------------------

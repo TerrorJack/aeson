@@ -32,7 +32,6 @@ import Test.Tasty (TestTree, testGroup)
 import Test.Tasty.HUnit (assertFailure, assertEqual, testCase)
 import Types (Approx(..), Compose3, Compose3', I)
 import qualified Data.ByteString.Lazy.Char8 as L
-import qualified Data.DList as DList
 import qualified Data.IntMap as IntMap
 import qualified Data.IntSet as IntSet
 import qualified Data.Map.Strict as M
@@ -63,7 +62,6 @@ jsonExamples =
   , example "Tuple" "[1,2]"  ((1, 2) :: (Int, Int))
   , example "NonEmpty" "[1,2,3]"  (1 :| [2, 3] :: NonEmpty Int)
   , example "Seq" "[1,2,3]"  (Seq.fromList [1, 2, 3] ::  Seq.Seq Int)
-  , example "DList" "[1,2,3]"  (DList.fromList [1, 2, 3] :: DList.DList Int)
   , example "()" "[]"  ()
 
   , Example "Map Int Int"

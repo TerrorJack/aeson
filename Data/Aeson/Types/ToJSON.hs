@@ -59,7 +59,6 @@ import Data.Aeson.Types.Generic (AllNullary, False, IsRecord, One, ProductSize, 
 import Data.Aeson.Types.Internal
 import Data.Attoparsec.Number (Number(..))
 import Data.Bits (unsafeShiftR)
-import Data.DList (DList)
 import Data.Fixed (Fixed, HasResolution)
 import Data.Foldable (toList)
 import Data.Functor.Compose (Compose(..))
@@ -87,7 +86,6 @@ import qualified Data.Aeson.Encoding as E
 import qualified Data.Aeson.Encoding.Internal as E (InArray, comma, econcat, retagEncoding)
 import qualified Data.ByteString as S
 import qualified Data.ByteString.Lazy as L
-import qualified Data.DList as DList
 import qualified Data.IntMap as IntMap
 import qualified Data.IntSet as IntSet
 import qualified Data.List.NonEmpty as NE
@@ -1519,24 +1517,6 @@ instance ToJSONKey Scientific where
     toJSONKey = toJSONKeyTextEnc E.scientificText
 
 -------------------------------------------------------------------------------
--- DList
--------------------------------------------------------------------------------
-
-instance ToJSON1 DList.DList where
-    liftToJSON t _ = listValue t . toList
-    {-# INLINE liftToJSON #-}
-
-    liftToEncoding t _ = listEncoding t . toList
-    {-# INLINE liftToEncoding #-}
-
-instance (ToJSON a) => ToJSON (DList.DList a) where
-    toJSON = toJSON1
-    {-# INLINE toJSON #-}
-
-    toEncoding = toEncoding1
-    {-# INLINE toEncoding #-}
-
--------------------------------------------------------------------------------
 -- transformers - Functors
 -------------------------------------------------------------------------------
 
@@ -2461,8 +2441,8 @@ class Monoid pairs => FromPairs enc pairs | enc -> pairs where
 instance (a ~ Value) => FromPairs (Encoding' a) Series where
   fromPairs = E.pairs
 
-instance FromPairs Value (DList Pair) where
-  fromPairs = object . toList
+instance FromPairs Value (Monoid.Endo [Pair]) where
+  fromPairs = object . ($ []) . Monoid.appEndo
 
 -- | Like 'KeyValue' but the value is already converted to JSON
 -- ('Value' or 'Encoding'), and the result actually represents lists of pairs
@@ -2470,8 +2450,8 @@ instance FromPairs Value (DList Pair) where
 class Monoid kv => KeyValuePair v kv where
     pair :: String -> v -> kv
 
-instance (v ~ Value) => KeyValuePair v (DList Pair) where
-    pair k v = DList.singleton (pack k .= v)
+instance (v ~ Value) => KeyValuePair v (Monoid.Endo [Pair]) where
+    pair k v = Monoid.Endo . (:) $ pack k .= v
 
 instance (e ~ Encoding) => KeyValuePair e Series where
     pair = E.pairStr

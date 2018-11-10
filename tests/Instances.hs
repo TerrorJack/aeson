@@ -16,7 +16,6 @@ import Data.Time.Clock (UTCTime(..))
 import Functions
 import Test.QuickCheck (Arbitrary(..), elements,  oneof)
 import Types
-import qualified Data.DList as DList
 import qualified Data.Map.Strict as M
 
 import Test.QuickCheck.Instances ()
@@ -157,6 +156,3 @@ instance ApproxEq Char where
 
 instance (ApproxEq a) => ApproxEq [a] where
     a =~ b = length a == length b && all (uncurry (=~)) (zip a b)
-
-instance Arbitrary a => Arbitrary (DList.DList a) where
-    arbitrary = DList.fromList <$> arbitrary
