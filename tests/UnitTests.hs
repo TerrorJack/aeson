@@ -26,8 +26,7 @@ import Data.Aeson.Text (encodeToTextBuilder)
 import Data.Aeson.Types (Options(..), Result(Success), ToJSON(..), Value(Null, Object), camelTo, camelTo2, defaultOptions, omitNothingFields, parse)
 import Data.Char (toUpper)
 import Data.Either.Compat (isLeft, isRight)
-import Data.Hashable (hash)
-import Data.HashMap.Strict (HashMap)
+import Data.Map.Strict (Map)
 import Data.List (sort)
 import Data.Maybe (fromMaybe)
 import Data.Sequence (Seq)
@@ -48,7 +47,7 @@ import Text.Printf (printf)
 import UnitTests.NullaryConstructors (nullaryConstructors)
 import qualified Data.ByteString.Base16.Lazy as LBase16
 import qualified Data.ByteString.Lazy.Char8 as L
-import qualified Data.HashSet as HashSet
+import qualified Data.Set as Set
 import qualified Data.Text.Lazy as LT
 import qualified Data.Text.Lazy.Builder as TLB
 import qualified Data.Text.Lazy.Encoding as LT
@@ -88,7 +87,6 @@ tests = testGroup "unit" [
     ]
   , testGroup ".:, .:?, .:!" $ fmap (testCase "-") dotColonMark
   , testGroup "JSONPath" $ fmap (testCase "-") jsonPath
-  , testGroup "Hashable laws" $ fmap (testCase "-") hashableLaws
   , testGroup "Object construction" $ fmap (testCase "-") objectConstruction
   , testGroup "Issue #351" $ fmap (testCase "-") issue351
   , testGroup "Nullary constructors" $ fmap (testCase "-") nullaryConstructors
@@ -292,18 +290,6 @@ jsonPath = [
   ]
 
 ------------------------------------------------------------------------------
--- Check that the hashes of two equal Value are the same
-------------------------------------------------------------------------------
-
-hashableLaws :: [Assertion]
-hashableLaws = [
-    assertEqual "Hashable Object" (hash a) (hash b)
-  ]
-  where
-  a = object ["223" .= False, "807882556" .= True]
-  b = object ["807882556" .= True, "223" .= False]
-
-------------------------------------------------------------------------------
 -- Check that an alternative way to construct objects works
 ------------------------------------------------------------------------------
 
@@ -459,7 +445,7 @@ jsonTestSuite = do
     let dir = suitePath </> suite
     entries <- getDirectoryContents dir
     let ok name = takeExtension name == ".json" &&
-                  not (name `HashSet.member` blacklist)
+                  not (name `Set.member` blacklist)
     return . map (dir </>) . filter ok $ entries
   return $ testGroup "JSONTestSuite" $ map jsonTestSuiteTest testPaths
 
@@ -467,12 +453,12 @@ jsonTestSuite = do
 -- Not all of these failures are genuine bugs.
 -- Of those that are bugs, not all are worth fixing.
 
-blacklist :: HashSet.HashSet String
--- blacklist = HashSet.empty
+blacklist :: Set.Set String
+-- blacklist = Set.empty
 blacklist = _blacklist
 
-_blacklist :: HashSet.HashSet String
-_blacklist = HashSet.fromList [
+_blacklist :: Set.Set String
+_blacklist = Set.fromList [
     "i_object_key_lone_2nd_surrogate.json"
   , "i_string_1st_surrogate_but_2nd_missing.json"
   , "i_string_1st_valid_surrogate_2nd_invalid.json"
@@ -599,13 +585,13 @@ bigIntegerKeyDecoding :: Assertion
 bigIntegerKeyDecoding =
   assertEqual "Decoding an Integer key with a large exponent should fail"
     (Left "Error in $['1e2000']: expected a number with exponent <= 1024, encountered Number")
-    ((eitherDecode :: L.ByteString -> Either String (HashMap Integer Value)) "{ \"1e2000\": null }")
+    ((eitherDecode :: L.ByteString -> Either String (Map Integer Value)) "{ \"1e2000\": null }")
 
 bigNaturalKeyDecoding :: Assertion
 bigNaturalKeyDecoding =
   assertEqual "Decoding an Integer key with a large exponent should fail"
     (Left "Error in $['1e2000']: expected a number with exponent <= 1024, encountered Number")
-    ((eitherDecode :: L.ByteString -> Either String (HashMap Natural Value)) "{ \"1e2000\": null }")
+    ((eitherDecode :: L.ByteString -> Either String (Map Natural Value)) "{ \"1e2000\": null }")
 
 instance ToJSON MyRecord where
   toJSON = genericToJSON defaultOptions{omitNothingFields=True}

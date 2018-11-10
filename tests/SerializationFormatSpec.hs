@@ -37,11 +37,9 @@ import Test.Tasty.HUnit (assertFailure, assertEqual, testCase)
 import Types (Approx(..), Compose3, Compose3', I)
 import qualified Data.ByteString.Lazy.Char8 as L
 import qualified Data.DList as DList
-import qualified Data.HashMap.Strict as HM
-import qualified Data.HashSet as HashSet
 import qualified Data.IntMap as IntMap
 import qualified Data.IntSet as IntSet
-import qualified Data.Map as M
+import qualified Data.Map.Strict as M
 import qualified Data.Monoid as Monoid
 import qualified Data.Semigroup as Semigroup
 import qualified Data.Sequence as Seq
@@ -76,9 +74,9 @@ jsonExamples =
   , example "DList" "[1,2,3]"  (DList.fromList [1, 2, 3] :: DList.DList Int)
   , example "()" "[]"  ()
 
-  , Example "HashMap Int Int"
+  , Example "Map Int Int"
         [ "{\"0\":1,\"2\":3}", "{\"2\":3,\"0\":1}"]
-        (HM.fromList [(0,1),(2,3)] :: HM.HashMap Int Int)
+        (M.fromList [(0,1),(2,3)] :: M.Map Int Int)
   , Example "Map Int Int"
         [ "{\"0\":1,\"2\":3}", "{\"2\":3,\"0\":1}"]
         (M.fromList [(0,1),(2,3)] :: M.Map Int Int)
@@ -112,13 +110,13 @@ jsonExamples =
   , example "IntSet"  "[1,2,3]" (IntSet.fromList [3, 2, 1])
   , example "IntMap" "[[1,2],[3,4]]" (IntMap.fromList [(3,4), (1,2)] :: IntMap.IntMap Int)
   , example "Vector" "[1,2,3]" (Vector.fromList [1, 2, 3] :: Vector.Vector Int)
-  , example "HashSet Int" "[1,2,3]" (HashSet.fromList [3, 2, 1] :: HashSet.HashSet Int)
+  , example "Set Int" "[1,2,3]" (Set.fromList [3, 2, 1] :: Set.Set Int)
   , example "Tree Int" "[1,[[2,[[3,[]],[4,[]]]],[5,[]]]]" (let n = Tree.Node in n 1 [n 2 [n 3 [], n 4 []], n 5 []] :: Tree.Tree Int)
 
-  -- Three separate cases, as ordering in HashMap is not defined
-  , example "HashMap Float Int, NaN" "{\"NaN\":1}"  (Approx $ HM.singleton (0/0) 1 :: Approx (HM.HashMap Float Int))
-  , example "HashMap Float Int, Infinity" "{\"Infinity\":1}"  (HM.singleton (1/0) 1 :: HM.HashMap Float Int)
-  , example "HashMap Float Int, +Infinity" "{\"-Infinity\":1}"  (HM.singleton (negate 1/0) 1 :: HM.HashMap Float Int)
+  -- Three separate cases, as ordering in Map is not defined
+  , example "Map Float Int, NaN" "{\"NaN\":1}"  (Approx $ M.singleton (0/0) 1 :: Approx (M.Map Float Int))
+  , example "Map Float Int, Infinity" "{\"Infinity\":1}"  (M.singleton (1/0) 1 :: M.Map Float Int)
+  , example "Map Float Int, +Infinity" "{\"-Infinity\":1}"  (M.singleton (negate 1/0) 1 :: M.Map Float Int)
 
   -- Functors
   , example "Identity Int" "1"  (pure 1 :: Identity Int)

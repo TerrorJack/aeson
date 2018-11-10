@@ -31,7 +31,7 @@ import Data.Scientific (FPFormat(..), Scientific, base10Exponent)
 import Data.Text.Lazy.Builder
 import Data.Text.Lazy.Builder.Scientific (formatScientificBuilder)
 import Numeric (showHex)
-import qualified Data.HashMap.Strict as H
+import qualified Data.Map.Strict as M
 import qualified Data.Text as T
 import qualified Data.Text.Lazy as LT
 import qualified Data.Text.Lazy.Encoding as LT
@@ -67,7 +67,7 @@ encodeToTextBuilder =
                       V.foldr f (singleton ']') (V.unsafeTail v)
       where f a z = singleton ',' <> go a <> z
     go (Object m) = {-# SCC "go/Object" #-}
-        case H.toList m of
+        case M.toList m of
           (x:xs) -> singleton '{' <> one x <> foldr f (singleton '}') xs
           _      -> "{}"
       where f a z     = singleton ',' <> one a <> z

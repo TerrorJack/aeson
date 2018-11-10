@@ -48,7 +48,7 @@ import qualified Data.Attoparsec.Lazy as L
 import qualified Data.ByteString as B
 import qualified Data.ByteString.Unsafe as B
 import qualified Data.ByteString.Lazy as L
-import qualified Data.HashMap.Strict as H
+import qualified Data.Map.Strict as M
 import qualified Data.Scientific as Sci
 import Data.Aeson.Parser.Unescape (unescapeText)
 import GHC.Base (Int#, (==#), isTrue#, word2Int#, orI#, andI#)
@@ -108,16 +108,14 @@ object_' = {-# SCC "object_'" #-} do
     !s <- jstring
     return s
 
-objectValues :: Parser Text -> Parser Value -> Parser (H.HashMap Text Value)
+objectValues :: Parser Text -> Parser Value -> Parser (M.Map Text Value)
 objectValues str val = do
   skipSpace
   w <- A.peekWord8'
   if w == CLOSE_CURLY
-    then A.anyWord8 >> return H.empty
+    then A.anyWord8 >> return M.empty
     else loop []
  where
-  -- Why use acc pattern here, you may ask? because 'H.fromList' use 'unsafeInsert'
-  -- and it's much faster because it's doing in place update to the 'HashMap'!
   loop acc = do
     k <- str <* skipSpace <* char ':'
     v <- val <* skipSpace
@@ -125,7 +123,7 @@ objectValues str val = do
     let acc' = (k, v) : acc
     if ch == COMMA
       then skipSpace >> loop acc'
-      else return (H.fromList acc')
+      else return (M.fromList acc')
 {-# INLINE objectValues #-}
 
 array_ :: Parser Value

@@ -20,11 +20,10 @@ import Functions
 import Test.QuickCheck (Arbitrary(..), elements,  oneof)
 import Types
 import qualified Data.DList as DList
-import qualified Data.HashMap.Strict as HM
+import qualified Data.Map.Strict as M
 
 import Data.Orphans ()
 import Test.QuickCheck.Instances ()
-import Data.Hashable.Time ()
 
 -- "System" types.
 
@@ -57,8 +56,8 @@ instance ApproxEq Double where
       | isNaN a && isNaN b = True
       | otherwise          = approxEq a b
 
-instance (ApproxEq k, Eq v) => ApproxEq (HM.HashMap k v) where
-    a =~ b = and $ zipWith eq (HM.toList a) (HM.toList b)
+instance (ApproxEq k, Eq v) => ApproxEq (M.Map k v) where
+    a =~ b = and $ zipWith eq (M.toList a) (M.toList b)
       where
         eq (x,y) (u,v) = x =~ u && y == v
 

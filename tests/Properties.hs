@@ -17,11 +17,9 @@ import Data.Aeson.Parser (value)
 import Data.Aeson.Types
 import Data.DList (DList)
 import Data.Functor.Compose (Compose (..))
-import Data.HashMap.Strict (HashMap)
-import Data.Hashable (Hashable)
+import Data.Map.Strict (Map)
 import Data.Int (Int8)
 import Data.List.NonEmpty (NonEmpty)
-import Data.Map (Map)
 import Data.Proxy (Proxy)
 import Data.Ratio (Ratio)
 import Data.Semigroup (Option(..))
@@ -38,8 +36,7 @@ import Test.QuickCheck (Arbitrary(..), Property, Testable, (===), (.&&.), counte
 import Types
 import qualified Data.Attoparsec.Lazy as L
 import qualified Data.ByteString.Lazy.Char8 as L
-import qualified Data.HashMap.Strict as H
-import qualified Data.Map as Map
+import qualified Data.Map.Strict as Map
 import qualified Data.Text as T
 import qualified Data.Text.Lazy as LT
 import qualified Data.UUID.Types as UUID
@@ -90,10 +87,10 @@ roundTripNoEnc eq _ i =
 roundTripEq :: (Eq a, FromJSON a, ToJSON a, Show a) => a -> a -> Property
 roundTripEq x y = roundTripEnc (===) x y .&&. roundTripNoEnc (===) x y
 
--- We test keys by encoding HashMap and Map with it
+-- We test keys by encoding Map and Map with it
 roundTripKey
-    :: (Ord a, Hashable a, FromJSONKey a, ToJSONKey a, Show a)
-    => a -> HashMap a Int -> Map a Int -> Property
+    :: (Ord a, FromJSONKey a, ToJSONKey a, Show a)
+    => a -> Map a Int -> Map a Int -> Property
 roundTripKey _ h m = roundTripEq h h .&&. roundTripEq m m
 
 infix 4 ==~
@@ -138,7 +135,7 @@ parserCatchErrorProp path msg =
     jsonPath = map (I.Key . T.pack) path
 
 -- | Perform a structural comparison of the results of two encoding
--- methods. Compares decoded values to account for HashMap-driven
+-- methods. Compares decoded values to account for Map-driven
 -- variation in JSON object key ordering.
 sameAs :: (a -> Value) -> (a -> Encoding) -> a -> Property
 sameAs toVal toEnc v =
@@ -190,8 +187,8 @@ is2ElemArray (Array v) = V.length v == 2 && isString (V.head v)
 is2ElemArray _         = False
 
 isTaggedObjectValue :: Value -> Bool
-isTaggedObjectValue (Object obj) = "tag"      `H.member` obj &&
-                                   "contents" `H.member` obj
+isTaggedObjectValue (Object obj) = "tag"      `Map.member` obj &&
+                                   "contents" `Map.member` obj
 isTaggedObjectValue _            = False
 
 isNullaryTaggedObject :: Value -> Bool
@@ -201,11 +198,11 @@ isTaggedObject :: Value -> Property
 isTaggedObject = checkValue isTaggedObject'
 
 isTaggedObject' :: Value -> Bool
-isTaggedObject' (Object obj) = "tag" `H.member` obj
+isTaggedObject' (Object obj) = "tag" `Map.member` obj
 isTaggedObject' _            = False
 
 isObjectWithSingleField :: Value -> Bool
-isObjectWithSingleField (Object obj) = H.size obj == 1
+isObjectWithSingleField (Object obj) = Map.size obj == 1
 isObjectWithSingleField _            = False
 
 -- | is untaggedValue of EitherTextInt

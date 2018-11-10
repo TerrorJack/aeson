@@ -51,7 +51,7 @@ import Data.Time (UTCTime(..))
 import Data.Time.Calendar (Day(..), toGregorian)
 import Data.Time.LocalTime
 import Data.Word (Word8)
-import qualified Data.HashMap.Strict as HMS
+import qualified Data.Map.Strict as M
 import qualified Data.Text as T
 import qualified Data.Vector as V
 
@@ -87,8 +87,8 @@ array v
     withComma a z = B.char8 ',' <> encodeToBuilder a <> z
 
 -- Encode a JSON object.
-object :: HMS.HashMap T.Text Value -> Builder
-object m = case HMS.toList m of
+object :: M.Map T.Text Value -> Builder
+object m = case M.toList m of
     (x:xs) -> B.char8 '{' <> one x <> foldr withComma (B.char8 '}') xs
     _      -> emptyObject_
   where

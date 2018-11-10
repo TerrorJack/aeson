@@ -76,8 +76,7 @@ import Control.Monad (MonadPlus(..), ap)
 import Data.Char (isLower, isUpper, toLower, isAlpha, isAlphaNum)
 import Data.Data (Data)
 import Data.Foldable (foldl')
-import Data.HashMap.Strict (HashMap)
-import Data.Hashable (Hashable(..))
+import Data.Map.Strict (Map)
 import Data.List (intercalate)
 import Data.Scientific (Scientific)
 import Data.Semigroup (Semigroup((<>)))
@@ -89,7 +88,7 @@ import Data.Typeable (Typeable)
 import Data.Vector (Vector)
 import GHC.Generics (Generic)
 import qualified Control.Monad.Fail as Fail
-import qualified Data.HashMap.Strict as H
+import qualified Data.Map.Strict as M
 import qualified Data.Scientific as S
 import qualified Data.Vector as V
 import qualified Language.Haskell.TH.Syntax as TH
@@ -323,7 +322,7 @@ apP d e = do
 {-# INLINE apP #-}
 
 -- | A JSON \"object\" (key\/value map).
-type Object = HashMap Text Value
+type Object = Map Text Value
 
 -- | A JSON \"array\" (sequence).
 type Array = Vector Value
@@ -362,18 +361,6 @@ instance IsString Value where
     fromString = String . pack
     {-# INLINE fromString #-}
 
-hashValue :: Int -> Value -> Int
-hashValue s (Object o)   = s `hashWithSalt` (0::Int) `hashWithSalt` o
-hashValue s (Array a)    = foldl' hashWithSalt
-                              (s `hashWithSalt` (1::Int)) a
-hashValue s (String str) = s `hashWithSalt` (2::Int) `hashWithSalt` str
-hashValue s (Number n)   = s `hashWithSalt` (3::Int) `hashWithSalt` n
-hashValue s (Bool b)     = s `hashWithSalt` (4::Int) `hashWithSalt` b
-hashValue s Null         = s `hashWithSalt` (5::Int)
-
-instance Hashable Value where
-    hashWithSalt = hashValue
-
 -- @since 0.11.0.0
 instance TH.Lift Value where
     lift Null = [| Null |]
@@ -386,8 +373,8 @@ instance TH.Lift Value where
       where s = unpack t
     lift (Array a) = [| Array (V.fromList a') |]
       where a' = V.toList a
-    lift (Object o) = [| Object (H.fromList . map (first pack) $ o') |]
-      where o' = map (first unpack) . H.toList $ o
+    lift (Object o) = [| Object (M.fromList . map (first pack) $ o') |]
+      where o' = map (first unpack) . M.toList $ o
 
 -- | The empty array.
 emptyArray :: Value
@@ -401,7 +388,7 @@ isEmptyArray _ = False
 
 -- | The empty object.
 emptyObject :: Value
-emptyObject = Object H.empty
+emptyObject = Object M.empty
 
 -- | Run a 'Parser'.
 parse :: (a -> Parser b) -> a -> Result b
@@ -459,7 +446,7 @@ type Pair = (Text, Value)
 -- | Create a 'Value' from a list of name\/value 'Pair's.  If duplicate
 -- keys arise, earlier keys and their associated values win.
 object :: [Pair] -> Value
-object = Object . H.fromList
+object = Object . M.fromList
 {-# INLINE object #-}
 
 -- | Add JSON Path context to a parser

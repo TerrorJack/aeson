@@ -16,7 +16,7 @@ import Numeric.Natural (Natural)
 import Test.Tasty (TestTree)
 import Test.Tasty.HUnit (Assertion, assertFailure, assertEqual, testCase)
 import qualified Data.ByteString.Lazy.Char8 as L
-import qualified Data.HashMap.Strict as HM
+import qualified Data.Map.Strict as M
 
 tests :: [TestTree]
 tests =
@@ -25,7 +25,7 @@ tests =
     , testCase "Integer" integer
     , testCase "Natural" natural
     , testCase "String" string
-    , testCase "HashMap" hashMap
+    , testCase "Map" mapAssertion
     ]
 
 int :: Assertion
@@ -55,11 +55,11 @@ string = do
   t "{}" $ expected "String" "Object"
   t "null" $ expected "String" "Null"
 
-hashMap :: Assertion
-hashMap = do
-  let t = test (Proxy :: Proxy (HM.HashMap String Int))
-  t "\"\"" $ expected "HashMap k v" "String"
-  t "[]" $ expected "HashMap k v" "Array"
+mapAssertion :: Assertion
+mapAssertion = do
+  let t = test (Proxy :: Proxy (M.Map String Int))
+  t "\"\"" $ expected "Map k v" "String"
+  t "[]" $ expected "Map k v" "Array"
 
 expected :: String -> String -> String
 expected ex enc = "Error in $: expected " ++ ex ++ ", encountered " ++ enc

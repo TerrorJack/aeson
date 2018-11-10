@@ -74,7 +74,6 @@ import Prelude.Compat
 
 import Control.Applicative ((<|>), Const(..))
 import Control.Monad ((<=<), zipWithM)
-import Data.Aeson.Internal.Functions (mapKey)
 import Data.Aeson.Parser.Internal (eitherDecodeWith, jsonEOF)
 import Data.Aeson.Types.Generic
 import Data.Aeson.Types.Internal
@@ -84,7 +83,6 @@ import Data.Functor.Compose (Compose(..))
 import Data.Functor.Identity (Identity(..))
 import Data.Functor.Product (Product(..))
 import Data.Functor.Sum (Sum(..))
-import Data.Hashable (Hashable(..))
 import Data.Int (Int16, Int32, Int64, Int8)
 import Data.List.NonEmpty (NonEmpty(..))
 import Data.Maybe (fromMaybe)
@@ -112,11 +110,9 @@ import qualified Data.Aeson.Compat as Compat
 import qualified Data.Aeson.Parser.Time as Time
 import qualified Data.Attoparsec.ByteString.Char8 as A (endOfInput, parseOnly, scientific)
 import qualified Data.DList as DList
-import qualified Data.HashMap.Strict as H
-import qualified Data.HashSet as HashSet
 import qualified Data.IntMap as IntMap
 import qualified Data.IntSet as IntSet
-import qualified Data.Map as M
+import qualified Data.Map.Strict as M
 import qualified Data.Monoid as Monoid
 import qualified Data.Scientific as Scientific
 import qualified Data.Semigroup as Semigroup
@@ -216,7 +212,7 @@ parseBoundedIntegralText expected t =
 parseOptionalFieldWith :: (Value -> Parser (Maybe a))
                        -> Object -> Text -> Parser (Maybe a)
 parseOptionalFieldWith pj obj key =
-    case H.lookup key obj of
+    case M.lookup key obj of
      Nothing -> pure Nothing
      Just v  -> pj v <?> Key key
 {-# INLINE parseOptionalFieldWith #-}
@@ -371,7 +367,7 @@ class FromJSON a where
 --   the recommended way to define instances is with generalized newtype deriving:
 --
 --   > newtype SomeId = SomeId { getSomeId :: Text }
---   >   deriving (Eq,Ord,Hashable,FromJSONKey)
+--   >   deriving (Eq,Ord,FromJSONKey)
 --
 class FromJSONKey a where
     -- | Strategy for parsing the key of a map-like container.
@@ -390,7 +386,7 @@ class FromJSONKey a where
 -- | With GHC 7.8+ we carry around @'Coercible' 'Text' a@ dictionary,
 -- to give us an assurance that the program will not segfault.
 -- Unfortunately we cannot enforce that the 'Eq' instances or the
--- 'Hashable' instances for 'Text' and @a@ agree.
+-- 'Ord' instances for 'Text' and @a@ agree.
 --
 -- At the moment this type is intentionally not exported. 'FromJSONKeyFunction'
 -- can be inspected, but cannot be constructed.
@@ -421,11 +417,11 @@ instance Functor FromJSONKeyFunction where
     fmap h (FromJSONKeyValue f)           = FromJSONKeyValue (fmap h . f)
 
 -- | Construct 'FromJSONKeyFunction' for types coercible from 'Text'. This
--- conversion is still unsafe, as 'Hashable' and 'Eq' instances of @a@ should be
--- compatible with 'Text' i.e. hash values should be equal for wrapped values as well.
--- This property will always be maintained if the 'Hashable' and 'Eq' instances
+-- conversion is still unsafe, as 'Ord' and 'Eq' instances of @a@ should be
+-- compatible with 'Text'.
+-- This property will always be maintained if the 'Ord' and 'Eq' instances
 -- are derived with generalized newtype deriving.
--- compatible with 'Text' i.e. hash values be equal for wrapped values as well.
+-- compatible with 'Text'.
 --
 -- On pre GHC 7.8 this is unconstrainted function.
 fromJSONKeyCoerce ::
@@ -720,21 +716,21 @@ parseFieldMaybe' = (.:!)
 --
 -- E.g. @'explicitParseField' 'parseJSON1' :: ('FromJSON1' f, 'FromJSON' a) -> 'Object' -> 'Text' -> 'Parser' (f a)@
 explicitParseField :: (Value -> Parser a) -> Object -> Text -> Parser a
-explicitParseField p obj key = case H.lookup key obj of
+explicitParseField p obj key = case M.lookup key obj of
     Nothing -> fail $ "key " ++ show key ++ " not present"
     Just v  -> p v <?> Key key
 {-# INLINE explicitParseField #-}
 
 -- | Variant of '.:?' with explicit parser function.
 explicitParseFieldMaybe :: (Value -> Parser a) -> Object -> Text -> Parser (Maybe a)
-explicitParseFieldMaybe p obj key = case H.lookup key obj of
+explicitParseFieldMaybe p obj key = case M.lookup key obj of
     Nothing -> pure Nothing
     Just v  -> liftParseJSON p (listParser p) v <?> Key key -- listParser isn't used by maybe instance.
 {-# INLINE explicitParseFieldMaybe #-}
 
 -- | Variant of '.:!' with explicit parser function.
 explicitParseFieldMaybe' :: (Value -> Parser a) -> Object -> Text -> Parser (Maybe a)
-explicitParseFieldMaybe' p obj key = case H.lookup key obj of
+explicitParseFieldMaybe' p obj key = case M.lookup key obj of
     Nothing -> pure Nothing
     Just v  -> Just <$> p v <?> Key key
 {-# INLINE explicitParseFieldMaybe' #-}
@@ -903,7 +899,7 @@ parseNonAllNullarySum opts fargs =
 
       ObjectWithSingleField ->
           withObject "Object" $ \obj ->
-            case H.toList obj of
+            case M.toList obj of
               [pair@(tag, _)] -> fromMaybe (notFound tag) $
                                    parsePair opts fargs pair
               _ -> fail "Object doesn't have a single field"
@@ -1156,7 +1152,7 @@ instance (FromJSON a) => FromJSON (Maybe a) where
 
 
 instance FromJSON2 Either where
-    liftParseJSON2 pA _ pB _ (Object (H.toList -> [(key, value)]))
+    liftParseJSON2 pA _ pB _ (Object (M.toList -> [(key, value)]))
         | key == left  = Left  <$> pA value <?> Key left
         | key == right = Right <$> pB value <?> Key right
       where
@@ -1484,7 +1480,7 @@ instance (FromJSON1 f, FromJSON1 g, FromJSON a) => FromJSON (Product f g a) wher
 
 
 instance (FromJSON1 f, FromJSON1 g) => FromJSON1 (Sum f g) where
-    liftParseJSON p pl (Object (H.toList -> [(key, value)]))
+    liftParseJSON p pl (Object (M.toList -> [(key, value)]))
         | key == inl = InL <$> liftParseJSON p pl value <?> Key inl
         | key == inr = InR <$> liftParseJSON p pl value <?> Key inl
       where
@@ -1538,15 +1534,14 @@ instance FromJSON a => FromJSON (IntMap.IntMap a) where
     parseJSON = fmap IntMap.fromList . parseJSON
     {-# INLINE parseJSON #-}
 
-
 instance (FromJSONKey k, Ord k) => FromJSON1 (M.Map k) where
     liftParseJSON p _ = case fromJSONKey of
         FromJSONKeyCoerce _-> withObject "Map k v" $
-            fmap (H.foldrWithKey (M.insert . unsafeCoerce) M.empty) . H.traverseWithKey (\k v -> p v <?> Key k)
+            fmap (M.foldrWithKey (M.insert . unsafeCoerce) M.empty) . M.traverseWithKey (\k v -> p v <?> Key k)
         FromJSONKeyText f -> withObject "Map k v" $
-            fmap (H.foldrWithKey (M.insert . f) M.empty) . H.traverseWithKey (\k v -> p v <?> Key k)
+            fmap (M.foldrWithKey (M.insert . f) M.empty) . M.traverseWithKey (\k v -> p v <?> Key k)
         FromJSONKeyTextParser f -> withObject "Map k v" $
-            H.foldrWithKey (\k v m -> M.insert <$> f k <?> Key k <*> p v <?> Key k <*> m) (pure M.empty)
+            M.foldrWithKey (\k v m -> M.insert <$> f k <?> Key k <*> p v <?> Key k <*> m) (pure M.empty)
         FromJSONKeyValue f -> withArray "Map k v" $ \arr ->
             fmap M.fromList . Tr.sequence .
                 zipWith (parseIndexedJSONPair f p) [0..] . V.toList $ arr
@@ -1608,34 +1603,6 @@ instance (VP.Prim a, FromJSON a) => FromJSON (VP.Vector a) where
 
 instance (VG.Vector VU.Vector a, FromJSON a) => FromJSON (VU.Vector a) where
     parseJSON = vectorParseJSON "Data.Vector.Unboxed.Vector a"
-    {-# INLINE parseJSON #-}
-
--------------------------------------------------------------------------------
--- unordered-containers
--------------------------------------------------------------------------------
-
-instance (Eq a, Hashable a, FromJSON a) => FromJSON (HashSet.HashSet a) where
-    parseJSON = fmap HashSet.fromList . parseJSON
-    {-# INLINE parseJSON #-}
-
-
-instance (FromJSONKey k, Eq k, Hashable k) => FromJSON1 (H.HashMap k) where
-    liftParseJSON p _ = case fromJSONKey of
-        FromJSONKeyCoerce _ -> withObject "HashMap ~Text v" $
-            uc . H.traverseWithKey (\k v -> p v <?> Key k)
-        FromJSONKeyText f -> withObject "HashMap k v" $
-            fmap (mapKey f) . H.traverseWithKey (\k v -> p v <?> Key k)
-        FromJSONKeyTextParser f -> withObject "HashMap k v" $
-            H.foldrWithKey (\k v m -> H.insert <$> f k <?> Key k <*> p v <?> Key k <*> m) (pure H.empty)
-        FromJSONKeyValue f -> withArray "Map k v" $ \arr ->
-            fmap H.fromList . Tr.sequence .
-                zipWith (parseIndexedJSONPair f p) [0..] . V.toList $ arr
-      where
-        uc :: Parser (H.HashMap Text v) -> Parser (H.HashMap k v)
-        uc = unsafeCoerce
-
-instance (FromJSON v, FromJSONKey k, Eq k, Hashable k) => FromJSON (H.HashMap k v) where
-    parseJSON = parseJSON1
     {-# INLINE parseJSON #-}
 
 -------------------------------------------------------------------------------
