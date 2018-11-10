@@ -74,7 +74,6 @@ library
     Data.Aeson.Parser
     Data.Aeson.Text
     Data.Aeson.Types
-    Data.Aeson.TH
     Data.Aeson.QQ.Simple
 
     Data.Aeson.Encoding.Internal
