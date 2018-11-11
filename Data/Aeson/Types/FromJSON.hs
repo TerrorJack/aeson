@@ -71,7 +71,7 @@ module Data.Aeson.Types.FromJSON
 
 import Control.Applicative ((<|>), Const(..))
 import Control.Monad ((<=<), zipWithM)
-import Data.Aeson.Parser.Internal (eitherDecodeWith, jsonEOF)
+import Data.Aeson.Parser.Internal (eitherDecodeWith, jsonEOF, scientific)
 import Data.Aeson.Types.Generic
 import Data.Aeson.Types.Internal
 import Data.Bits (unsafeShiftR)
@@ -101,7 +101,7 @@ import Text.ParserCombinators.ReadP (readP_to_S)
 import Unsafe.Coerce (unsafeCoerce)
 import qualified Data.Aeson.Compat as Compat
 import qualified Data.Aeson.Parser.Time as Time
-import qualified Data.Attoparsec.ByteString.Char8 as A (endOfInput, parseOnly, scientific)
+import qualified Data.Attoparsec.ByteString.Char8 as A (endOfInput, parseOnly)
 import qualified Data.IntMap as IntMap
 import qualified Data.IntSet as IntSet
 import qualified Data.Map.Strict as M
@@ -171,7 +171,7 @@ parseBoundedIntegral expected =
 parseScientificText :: Text -> Parser Scientific
 parseScientificText
     = either fail pure
-    . A.parseOnly (A.scientific <* A.endOfInput)
+    . A.parseOnly (fmap Scientific.fromFloatDigits scientific <* A.endOfInput)
     . T.encodeUtf8
 
 parseIntegralText :: Integral a => String -> Text -> Parser a
@@ -593,7 +593,7 @@ withArray expected _ v           = typeMismatch expected v
 -- size of the exponent (see 'withBoundedScientific') to prevent
 -- malicious input from filling up the memory of the target system.
 withScientific :: String -> (Scientific -> Parser a) -> Value -> Parser a
-withScientific _        f (Number scientific) = f $ realToFrac scientific
+withScientific _        f (Number x) = f $ realToFrac x
 withScientific expected _ v                   = typeMismatch expected v
 {-# INLINE withScientific #-}
 
@@ -604,10 +604,10 @@ withScientific expected _ v                   = typeMismatch expected v
 -- The conversion will also fail with a @'typeMismatch' if the
 -- 'Scientific' exponent is larger than 1024.
 withBoundedScientific :: String -> (Scientific -> Parser a) -> Value -> Parser a
-withBoundedScientific _ f v@(Number scientific) =
-    if base10Exponent (Scientific.fromFloatDigits scientific) > 1024
+withBoundedScientific _ f v@(Number x) =
+    if base10Exponent (Scientific.fromFloatDigits x) > 1024
     then typeMismatch "a number with exponent <= 1024" v
-    else f (Scientific.fromFloatDigits scientific)
+    else f (Scientific.fromFloatDigits x)
 withBoundedScientific expected _ v                   = typeMismatch expected v
 {-# INLINE withBoundedScientific #-}
 
