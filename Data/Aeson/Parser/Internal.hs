@@ -37,7 +37,6 @@ import Control.Applicative ((<|>))
 import Control.Monad (void, when)
 import Data.Aeson.Types.Internal (IResult(..), JSONPath, Result(..), Value(..))
 import Data.Attoparsec.ByteString.Char8 (Parser, char, decimal, endOfInput, isDigit_w8, signed, string)
-import Data.Scientific (Scientific, toRealFloat)
 import Data.Text (Text)
 import qualified Data.Attoparsec.ByteString as A
 import qualified Data.Attoparsec.Lazy as L
@@ -168,7 +167,7 @@ value = do
     C_t           -> string "true" *> pure (Bool True)
     C_n           -> string "null" *> pure Null
     _              | w >= 48 && w <= 57 || w == 45
-                  -> Number . toRealFloat <$> scientific
+                  -> Number <$> scientific
       | otherwise -> fail "not a valid json value"
 
 -- | Strict version of 'value'. See also 'json''.
@@ -188,7 +187,7 @@ value' = do
     _              | w >= 48 && w <= 57 || w == 45
                   -> do
                      !n <- scientific
-                     return (Number $ toRealFloat n)
+                     return (Number n)
       | otherwise -> fail "not a valid json value"
 
 -- | Parse a quoted JSON string.
@@ -310,7 +309,7 @@ decimal0 = do
     else return (bsToInteger digits)
 
 -- | Parse a JSON number.
-scientific :: Parser Scientific
+scientific :: Parser Double
 scientific = do
   let minus = 45
       plus  = 43
@@ -337,8 +336,8 @@ scientific = do
   let littleE = 101
       bigE    = 69
   (A.satisfy (\ex -> ex == littleE || ex == bigE) *>
-      fmap (Sci.scientific signedCoeff . (e +)) (signed decimal)) <|>
-    return (Sci.scientific signedCoeff    e)
+      fmap (realToFrac . Sci.scientific signedCoeff . (e +)) (signed decimal)) <|>
+    return (realToFrac $ Sci.scientific signedCoeff    e)
 {-# INLINE scientific #-}
 
 ------------------ Copy-pasted and adapted from base ------------------------

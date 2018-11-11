@@ -1195,7 +1195,7 @@ instance FromJSONKey Double where
         "NaN"       -> pure (0/0)
         "Infinity"  -> pure (1/0)
         "-Infinity" -> pure (negate 1/0)
-        _           -> Scientific.toRealFloat <$> parseScientificText t
+        _           -> realToFrac <$> parseScientificText t
 
 instance FromJSON Float where
     parseJSON = parseRealFloat "Float"
@@ -1206,7 +1206,7 @@ instance FromJSONKey Float where
         "NaN"       -> pure (0/0)
         "Infinity"  -> pure (1/0)
         "-Infinity" -> pure (negate 1/0)
-        _           -> Scientific.toRealFloat <$> parseScientificText t
+        _           -> realToFrac <$> parseScientificText t
 
 instance (FromJSON a, Integral a) => FromJSON (Ratio a) where
     parseJSON = withObject "Rational" $ \obj -> do
