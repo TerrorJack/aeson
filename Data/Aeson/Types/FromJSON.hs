@@ -593,7 +593,7 @@ withArray expected _ v           = typeMismatch expected v
 -- size of the exponent (see 'withBoundedScientific') to prevent
 -- malicious input from filling up the memory of the target system.
 withScientific :: String -> (Scientific -> Parser a) -> Value -> Parser a
-withScientific _        f (Number scientific) = f $ Scientific.fromFloatDigits scientific
+withScientific _        f (Number scientific) = f $ realToFrac scientific
 withScientific expected _ v                   = typeMismatch expected v
 {-# INLINE withScientific #-}
 

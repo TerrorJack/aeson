@@ -108,7 +108,7 @@ toJSONPair a b = liftToJSON2 a (listValue a) b (listValue b)
 realFloatToJSON :: RealFloat a => a -> Value
 realFloatToJSON d
     | isNaN d || isInfinite d = Null
-    | otherwise = Number $ Scientific.toRealFloat $ Scientific.fromFloatDigits d
+    | otherwise = Number $ realToFrac $ Scientific.fromFloatDigits d
 {-# INLINE realFloatToJSON #-}
 
 -------------------------------------------------------------------------------
