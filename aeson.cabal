@@ -49,7 +49,6 @@ library
     Data.Aeson.Parser.Internal
 
   other-modules:
-    Data.Aeson.Compat
     Data.Aeson.Encoding.Builder
     Data.Aeson.Internal.Functions
     Data.Aeson.Parser.Unescape

@@ -99,9 +99,9 @@ import GHC.Generics
 import Numeric.Natural (Natural)
 import Text.ParserCombinators.ReadP (readP_to_S)
 import Unsafe.Coerce (unsafeCoerce)
-import qualified Data.Aeson.Compat as Compat
 import qualified Data.Aeson.Parser.Time as Time
 import qualified Data.Attoparsec.ByteString.Char8 as A (endOfInput, parseOnly)
+import qualified Data.ByteString.Lazy as L
 import qualified Data.IntMap as IntMap
 import qualified Data.IntSet as IntSet
 import qualified Data.Map.Strict as M
@@ -621,7 +621,7 @@ withBool expected _ v          = typeMismatch expected v
 -- | Decode a nested JSON-encoded string.
 withEmbeddedJSON :: String -> (Value -> Parser a) -> Value -> Parser a
 withEmbeddedJSON _ innerParser (String txt) =
-    either fail innerParser $ eitherDecode (Compat.fromStrict $ T.encodeUtf8 txt)
+    either fail innerParser $ eitherDecode (L.fromStrict $ T.encodeUtf8 txt)
     where
         eitherDecode = eitherFormatError . eitherDecodeWith jsonEOF ifromJSON
         eitherFormatError = either (Left . uncurry formatError) Right

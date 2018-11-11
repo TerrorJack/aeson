@@ -36,9 +36,6 @@ extra-deps:
   - uuid-types-1.0.3@sha256:01887ed945e74c3c361b00700bd9aeead37d1124d39c0d4f190f89fb0e909c47
   - vector-0.12.0.1@sha256:3d644fff350ee3eee2896e4d00cb45e73956f2862f0b18ee502282702682b978
   - wcwidth-0.0.2@sha256:77531eb6683c505c22ab3fa11bbc43d3ce1e7dac21401d4d5a19677d348bb5f3
-packages:
-  - '.'
-  - attoparsec-iso8601
 ghc-build: standard
 setup-info:
   ghc:
