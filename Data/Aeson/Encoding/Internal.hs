@@ -59,7 +59,7 @@ module Data.Aeson.Encoding.Internal
 import Data.Aeson.Types.Internal (Value)
 import Data.ByteString.Builder (Builder, char7, toLazyByteString)
 import Data.Int
-import Data.Scientific (Scientific)
+import Data.Aeson.Internal.Scientific (Scientific)
 import Data.Semigroup (Semigroup ((<>)))
 import Data.Text (Text)
 import Data.Time (Day, LocalTime, TimeOfDay, UTCTime, ZonedTime)

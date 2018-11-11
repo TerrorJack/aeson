@@ -51,6 +51,7 @@ library
   other-modules:
     Data.Aeson.Encoding.Builder
     Data.Aeson.Internal.Functions
+    Data.Aeson.Internal.Scientific
     Data.Aeson.Parser.Unescape
     Data.Aeson.Parser.UnescapePure
     Data.Aeson.Parser.Time
@@ -76,7 +77,8 @@ library
   -- Other dependencies
   build-depends:
     attoparsec           >= 0.13.2.2 && < 0.14,
-    scientific           >= 0.3.6.2  && < 0.4
+    integer-gmp,
+    integer-logarithms
 
   ghc-options: -Wall
 

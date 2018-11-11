@@ -86,7 +86,7 @@ import Data.Maybe (fromMaybe)
 import Data.Semigroup ((<>))
 import Data.Proxy (Proxy(..))
 import Data.Ratio ((%), Ratio)
-import Data.Scientific (Scientific, base10Exponent)
+import Data.Aeson.Internal.Scientific (Scientific, base10Exponent)
 import Data.Text (Text, pack, unpack)
 import Data.Time (Day, DiffTime, LocalTime, NominalDiffTime, TimeOfDay, UTCTime, ZonedTime)
 import Data.Time.Format (parseTime, defaultTimeLocale)
@@ -106,7 +106,7 @@ import qualified Data.IntMap as IntMap
 import qualified Data.IntSet as IntSet
 import qualified Data.Map.Strict as M
 import qualified Data.Monoid as Monoid
-import qualified Data.Scientific as Scientific
+import qualified Data.Aeson.Internal.Scientific as Scientific
 import qualified Data.Semigroup as Semigroup
 import qualified Data.Sequence as Seq
 import qualified Data.Set as Set
@@ -171,7 +171,7 @@ parseBoundedIntegral expected =
 parseScientificText :: Text -> Parser Scientific
 parseScientificText
     = either fail pure
-    . A.parseOnly (fmap Scientific.fromFloatDigits scientific <* A.endOfInput)
+    . A.parseOnly (scientific <* A.endOfInput)
     . T.encodeUtf8
 
 parseIntegralText :: Integral a => String -> Text -> Parser a
@@ -593,7 +593,7 @@ withArray expected _ v           = typeMismatch expected v
 -- size of the exponent (see 'withBoundedScientific') to prevent
 -- malicious input from filling up the memory of the target system.
 withScientific :: String -> (Scientific -> Parser a) -> Value -> Parser a
-withScientific _        f (Number x) = f $ realToFrac x
+withScientific _        f (Number x) = f $ Scientific.fromFloatDigits x
 withScientific expected _ v                   = typeMismatch expected v
 {-# INLINE withScientific #-}
 
@@ -1195,7 +1195,7 @@ instance FromJSONKey Double where
         "NaN"       -> pure (0/0)
         "Infinity"  -> pure (1/0)
         "-Infinity" -> pure (negate 1/0)
-        _           -> realToFrac <$> parseScientificText t
+        _           -> Scientific.toRealFloat <$> parseScientificText t
 
 instance FromJSON Float where
     parseJSON = parseRealFloat "Float"
@@ -1206,7 +1206,7 @@ instance FromJSONKey Float where
         "NaN"       -> pure (0/0)
         "Infinity"  -> pure (1/0)
         "-Infinity" -> pure (negate 1/0)
-        _           -> realToFrac <$> parseScientificText t
+        _           -> Scientific.toRealFloat <$> parseScientificText t
 
 instance (FromJSON a, Integral a) => FromJSON (Ratio a) where
     parseJSON = withObject "Rational" $ \obj -> do

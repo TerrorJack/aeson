@@ -44,7 +44,7 @@ import qualified Data.ByteString as B
 import qualified Data.ByteString.Unsafe as B
 import qualified Data.ByteString.Lazy as L
 import qualified Data.Map.Strict as M
-import qualified Data.Scientific as Sci
+import qualified Data.Aeson.Internal.Scientific as Sci
 import Data.Aeson.Parser.Unescape (unescapeText)
 import GHC.Base (Int#, (==#), isTrue#, word2Int#, orI#, andI#)
 import GHC.Word (Word8(W8#))
@@ -167,7 +167,7 @@ value = do
     C_t           -> string "true" *> pure (Bool True)
     C_n           -> string "null" *> pure Null
     _              | w >= 48 && w <= 57 || w == 45
-                  -> Number <$> scientific
+                  -> Number . Sci.toRealFloat <$> scientific
       | otherwise -> fail "not a valid json value"
 
 -- | Strict version of 'value'. See also 'json''.
@@ -187,7 +187,7 @@ value' = do
     _              | w >= 48 && w <= 57 || w == 45
                   -> do
                      !n <- scientific
-                     return (Number n)
+                     return (Number $ Sci.toRealFloat n)
       | otherwise -> fail "not a valid json value"
 
 -- | Parse a quoted JSON string.
@@ -309,7 +309,7 @@ decimal0 = do
     else return (bsToInteger digits)
 
 -- | Parse a JSON number.
-scientific :: Parser Double
+scientific :: Parser Sci.Scientific
 scientific = do
   let minus = 45
       plus  = 43
@@ -336,8 +336,8 @@ scientific = do
   let littleE = 101
       bigE    = 69
   (A.satisfy (\ex -> ex == littleE || ex == bigE) *>
-      fmap (realToFrac . Sci.scientific signedCoeff . (e +)) (signed decimal)) <|>
-    return (realToFrac $ Sci.scientific signedCoeff    e)
+      fmap (Sci.scientific (fromInteger signedCoeff) . (e +)) (signed decimal)) <|>
+    return (Sci.scientific (fromInteger signedCoeff)    e)
 {-# INLINE scientific #-}
 
 ------------------ Copy-pasted and adapted from base ------------------------

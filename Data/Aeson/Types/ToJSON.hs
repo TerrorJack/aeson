@@ -90,7 +90,7 @@ import qualified Data.IntSet as IntSet
 import qualified Data.List.NonEmpty as NE
 import qualified Data.Map.Strict as M
 import qualified Data.Monoid as Monoid
-import qualified Data.Scientific as Scientific
+import qualified Data.Aeson.Internal.Scientific as Scientific
 import qualified Data.Semigroup as Semigroup
 import qualified Data.Sequence as Seq
 import qualified Data.Set as Set
@@ -108,7 +108,7 @@ toJSONPair a b = liftToJSON2 a (listValue a) b (listValue b)
 realFloatToJSON :: RealFloat a => a -> Value
 realFloatToJSON d
     | isNaN d || isInfinite d = Null
-    | otherwise = Number $ realToFrac $ Scientific.fromFloatDigits d
+    | otherwise = Number $ Scientific.toRealFloat $ Scientific.fromFloatDigits d
 {-# INLINE realFloatToJSON #-}
 
 -------------------------------------------------------------------------------

@@ -39,10 +39,9 @@ import Data.Aeson.Internal.Time
 import Data.Aeson.Types.Internal (Value (..))
 import Data.ByteString.Builder as B
 import Data.ByteString.Builder.Prim as BP
-import Data.ByteString.Builder.Scientific (scientificBuilder)
 import Data.Char (chr, ord)
 import Data.Semigroup ((<>))
-import Data.Scientific (Scientific, base10Exponent, coefficient, fromFloatDigits)
+import Data.Aeson.Internal.Scientific (scientificBuilder, Scientific, base10Exponent, coefficient, fromFloatDigits)
 import Data.Text.Encoding (encodeUtf8BuilderEscaped)
 import Data.Time (UTCTime(..))
 import Data.Time.Calendar (Day(..), toGregorian)
@@ -131,7 +130,7 @@ c2w c = fromIntegral (ord c)
 scientific :: Scientific -> Builder
 scientific s
     | e < 0 || e > 1024 = scientificBuilder s
-    | otherwise = B.integerDec (coefficient s * 10 ^ e)
+    | otherwise = B.integerDec (fromIntegral (coefficient s) * 10 ^ e)
   where
     e = base10Exponent s
 
