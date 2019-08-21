@@ -1,0 +1,1 @@
+--command="stack ghci aeson:lib aeson:tests --ghci-options=\"-fno-code -j -Wall\""
