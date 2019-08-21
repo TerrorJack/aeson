@@ -1,0 +1,41 @@
+version: 2
+
+jobs:
+  aeson-test-stack:
+    docker:
+      - image: debian:unstable
+    environment:
+      - DEBIAN_FRONTEND: noninteractive
+      - LANG: C.UTF-8
+      - PATH: /root/.local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+    steps:
+      - run:
+          name: Install dependencies
+          command: |
+            apt update
+            apt full-upgrade -y
+            apt install -y \
+              curl \
+              gcc \
+              git \
+              libffi-dev \
+              libgmp-dev \
+              libncurses-dev \
+              make \
+              openssh-client \
+              xz-utils \
+              zlib1g-dev
+            mkdir -p /root/.local/bin
+            curl -L https://get.haskellstack.org/stable/linux-x86_64.tar.gz | tar xz --wildcards --strip-components=1 -C /root/.local/bin '*/stack'
+      - checkout
+      - run:
+          name: Test aeson
+          command: |
+            stack --no-terminal -j2 build --haddock --test --no-run-tests
+            stack --no-terminal test aeson:tests --test-arguments="-j2"
+
+workflows:
+  version: 2
+  build:
+    jobs:
+      - aeson-test-stack
